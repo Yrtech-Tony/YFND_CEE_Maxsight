@@ -1,0 +1,56 @@
+<project name="CSLL.Web_PRD" default="compile">
+ 
+  <target name="CustomizingConfigFile">
+
+    <if test="${property::exists('AccessKeyId.appsettings')}">
+      <xmlpoke
+            file="${source.website.dir}"
+            xpath="/configuration/appSettings/add[@key='AccessKeyId']/@value"
+            value="${AccessKeyId.appsettings}">
+      </xmlpoke>
+    </if>
+    <if test="${property::exists('AccessKeySecret.appsettings')}">
+      <xmlpoke
+            file="${source.website.dir}"
+            xpath="/configuration/appSettings/add[@key='AccessKeySecret']/@value"
+            value="${AccessKeySecret.appsettings}">
+      </xmlpoke>
+    </if>
+    <if test="${property::exists('Endpoint.appsettings')}">
+      <xmlpoke
+            file="${source.website.dir}"
+            xpath="/configuration/appSettings/add[@key='Endpoint']/@value"
+            value="${Endpoint.appsettings}">
+      </xmlpoke>
+    </if>
+    <if test="${property::exists('OssKey.appsettings')}">
+      <xmlpoke
+            file="${source.website.dir}"
+            xpath="/configuration/appSettings/add[@key='OssKey']/@value"
+            value="${OssKey.appsettings}">
+      </xmlpoke>
+    </if>
+    <if test="${property::exists('Bucket.appsettings')}">
+      <xmlpoke
+            file="${source.website.dir}"
+            xpath="/configuration/appSettings/add[@key='Bucket']/@value"
+            value="${Bucket.appsettings}">
+      </xmlpoke>
+    </if>
+    <if test="${property::exists('Domain.appsettings')}">
+      <xmlpoke
+            file="${source.website.dir}"
+            xpath="/configuration/appSettings/add[@key='Domain']/@value"
+            value="${Domain.appsettings}">
+      </xmlpoke>
+    </if>
+    
+  </target>
+
+
+  <target  name="Web_Publish">
+    <touch file="${target.website.dir}" />
+  </target>
+
+
+</project>
