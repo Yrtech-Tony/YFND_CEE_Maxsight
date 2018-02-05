@@ -1,0 +1,11 @@
+<project name="sample" default="compile">
+  <target name="config_file">
+    <if test="${property::exists('env.settings')}">
+      <xmlpoke
+            file="${source.website.dir}"
+            xpath="/configuration/system.webServer/aspNetCore/environmentVariables/environmentVariable[@name='ASPNETCORE_ENVIRONMENT']/@value"
+            value="${env.settings}">
+      </xmlpoke>
+    </if>
+  </target>
+</project>

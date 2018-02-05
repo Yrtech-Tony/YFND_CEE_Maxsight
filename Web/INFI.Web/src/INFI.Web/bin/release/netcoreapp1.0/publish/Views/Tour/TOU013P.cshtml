@@ -1,0 +1,248 @@
+﻿@{
+    Layout = "_LayoutOfPop";
+    ViewData["Title"] = "自定义改善登记POP";
+}
+@section HeadCss{
+    <style>
+        .title-xs {
+            width: 100px !important;
+        }
+    </style>
+}
+<div class="row  gap-top">
+    <div class="col-md-9  col-sm-9 col-xs-9">
+        <div class="input-group">
+            <span class="input-group-addon title-xs"><font color="red">*</font>&nbsp;计划</span>
+            <select class="form-control" id="select_plan_id"></select>
+        </div>
+    </div>
+    <div class="col-md-3  col-sm-3 col-xs-3">
+        <div class="pull-right">
+            <button type="button" class="btn btn-primary" id="btnSave">
+                <span class="fa fa-save gap-icon"></span>保存
+            </button>
+        </div>
+    </div>
+</div>
+@*<div class="row  gap-top">
+        <div class="col-md-12  col-sm-12 col-xs-12">
+            <div class="input-group">
+                <span class="input-group-addon title-xs">计划任务</span>
+                <select class="form-control" id="select_plan_id"></select>
+            </div>
+        </div> title-xs
+    </div>*@
+
+<div class="row  gap-top">
+    <div class="col-md-12  col-sm-12 col-xs-12">
+        <div class="input-group">
+            <label class="input-group-addon title-xs"><font color="red">*</font>类型</label>
+            <select class="form-control" id="input_CardType_id"></select>
+        </div>
+    </div>
+</div>
+<div class="row  gap-top">
+    <div class="col-md-12  col-sm-12 col-xs-12">
+        <div class="input-group">
+            <label class="input-group-addon title-xs"><font color="red">*</font>&nbsp;改善标题</label>
+            <input type="text" class="form-control" style="max-width:100%;" id="input_imptitle_id">
+        </div>
+    </div>
+</div>
+<div class="row  gap-top">
+    <div class="col-md-12  col-sm-12 col-xs-12">
+        <div class="input-group">
+            <label class="input-group-addon title-xs">改善描述</label>
+            <textarea id="txt_impdesc_id" class="form-control" rows="4"></textarea>
+        </div>
+    </div>
+</div>
+<div class="row  gap-top">
+    <div class="col-md-4  col-sm-4 col-xs-4">
+        <div class="input-group">
+            <label class="input-group-addon title-xs">计划审批</label>
+            <div class="form-control">
+                <label class="checkbox-inline">
+                    <input type="checkbox" id="chkPlanApproalYN" />&nbsp;
+                </label>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8  col-sm-8 col-xs-8">
+        <div class="input-group">
+            <label class="input-group-addon title-xs">完成日期</label>
+            <div class="input-group">
+                <input type="text" class="form_datetime form-control" id="txtPlanDate" value="@ViewBag.CurrentDate" />
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row  gap-top">
+    <div class="col-md-4 col-sm-4 col-xs-4">
+        <div class="input-group">
+            <label class="input-group-addon title-xs">结果审批</label>
+            <div class="form-control">
+                <label class="checkbox-inline">
+                    <input type="checkbox" id="chkResultApproalYN" checked/>&nbsp;
+                </label>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8  col-sm-8 col-xs-8">
+        <div class="input-group">
+            <label class="input-group-addon title-xs">完成日期</label>
+            <div class="input-group">
+                <input type="text" class="form_datetime form-control" id="txtResultDate" value="@ViewBag.CurrentDate" />
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row  gap-top">
+    <div class="col-md-12  col-sm-12 col-xs-12">
+        <div class="input-group">
+            <label class="input-group-addon title-xs">备注</label>
+            <textarea id="txt_remark_id" class="form-control"></textarea>
+        </div>
+    </div>
+</div>
+@section Scripts{
+    <!-- 1. Load -->
+    <script type="text/javascript">
+        var _disId = Request["pamDisId"];
+        $(document).ready(function () {
+            $(".form_datetime").datetimepicker({
+                format: 'yyyy-mm-dd',
+                language: 'zh-CN',
+                minView: 2, //显示到具体日期，如果设置到1，则显示到具体时间点。
+                autoclose: 1,
+                todayHighlight: 1,
+                todayBtn: 1,
+                startView: 2, //开始页面设置为具体到日期的那个页面。
+                pickerPosition: 'bottom-left'
+            });
+            fn_Initial();
+            fn_InitEvent();
+        });
+    </script>
+    <!--2.Init-->
+    <script type="text/javascript">
+        function fn_Initial() {
+            fn_GetTaskOfPlan();
+            fn_GetTaskCardKind();
+        }
+        function fn_GetTaskOfPlan() {
+            $.sa.get(GETALLPLANSBYDISID, {
+                inUserId: '@Context.Request.Cookies[SessionKeys.SESSION_USERID]',
+                userType: '@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]',
+                disId: _disId
+            },
+                    {
+                        "success": function (data) {
+                            $("#select_plan_id").html(JsonToCboList("Title", "Id", eval(data.body), { 'SelectType': 'SELECT' }));
+                        },
+                        "failure": function (data, statusText, jqXHR) {
+                            $("#callback_1_layer").html(data.msg);
+                        }
+                    });
+
+        }
+        function fn_GetTaskCardKind() {
+            $.sa.get(TASKGETSTATUS,
+                           { GroupCode: '16' },
+                            {
+                                "success": function (data) {
+                                    if (data != null) {
+                                        $('#input_CardType_id').html(JsonToCboList("Name", "Value", JSON.parse(data.body), { "SelectType": "SELECT" }));
+                                    }
+                                },
+                                "failure": function (data, statusText, jqXHR) {
+                                    $.sa.warning(data.msg);
+                                }
+                            });
+        }
+        function fn_InitEvent() {
+            $("#btnSave").on("click", function () {
+                fn_saveImpItem();
+            });
+        }
+    </script>
+    <!--3.SaveValidate-->
+    <script type="text/javascript">
+        function fn_saveValidate() {
+            var isValiA = true;
+            var isValiB = true;
+            var isVali = true;
+            var isCardType = true;
+            if ($.trim($("#select_plan_id").val()) == "" || $.trim($("#select_plan_id").val()) == "select") {
+                isValiA = false;
+            } else if ($("#input_CardType_id").val() == "select") {
+                isCardType = false;
+            }
+            else if ($.trim($("#input_imptitle_id").val()) == "") {
+                isValiB = false;
+            }
+
+            if (!isValiA) {
+                $.sa.warning("请选择计划任务", {
+                    title: "警告！", fnClose: function () {
+                        $("#select_plan_id").focus();
+                    }
+                });
+            } else if (!isCardType) {
+                $.sa.warning("请选择任务卡类型", {
+                    title: "警告！", fnClose: function () {
+                        $("#input_CardType_id").focus();
+                    }
+                });
+            } else if (!isValiB) {
+                $.sa.warning("请输入改善标题", {
+                    title: "警告！", fnClose: function () {
+                        $("#input_imptitle_id").focus();
+                    }
+                });
+            }
+
+            isVali = isValiA && isValiB && isCardType;
+            return isVali;
+        }
+    </script>
+    <!--4.Save-->
+    <script type="text/javascript">
+        function fn_saveImpItem() {
+            if (fn_saveValidate()) {
+                var myDialog = $.sa.confirm('是否要保存？', {
+                    fnOk: function () {
+                        var param = {};
+                        param["PId"] = $.trim($("#select_plan_id").val());
+                        param["ImpTitle"] = $.trim($("#input_imptitle_id").val());
+                        param["ImpDesc"] = $.trim($("#txt_impdesc_id").val());
+                        param["PlanApproalYN"] = $("#chkPlanApproalYN").is(":checked");
+                        param["PlanFinishDate"] = $.trim($("#txtPlanDate").val());
+                        param["ResultApproalYN"] = $("#chkResultApproalYN").is(":checked");
+                        param["ResultFinishDate"] = $.trim($("#txtResultDate").val());
+                        param["Remark"] = $.trim($("#txt_remark_id").val());
+                        param["InUserId"] = '@Context.Request.Cookies[SessionKeys.SESSION_USERID]';
+                        param["TCKind"] = $.trim($("#input_CardType_id").val());
+                        $.sa.post(REGCUSTOMIZEDIMPITEM,
+                            JSON.stringify(param),
+                                 {
+                                     "success": function (data) {
+                                         myDialog.close();
+                                         if (data.resultCode == 0) {
+                                             $.sa.alert('保存成功', { maxWidth: '400px', minWidth: '300px', showClose: false });
+                                             parent.popcallback('1');
+                                         } else {
+                                             $.sa.alert(data.msg);
+                                         }
+                                     },
+                                     "failure": function (data, statusText, jqXHR) {
+                                         $("#callback_1_layer").html(data.msg);
+                                     }
+                                 }
+                                 , $("body"));
+                    }
+                });
+            }
+        }
+    </script>
+}

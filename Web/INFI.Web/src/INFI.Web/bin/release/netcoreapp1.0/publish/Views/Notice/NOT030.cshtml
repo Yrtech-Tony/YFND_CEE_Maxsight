@@ -1,0 +1,389 @@
+﻿@{
+    Layout = "_LayoutMenu";
+    ViewData["Title"] = "反馈列表";
+}
+@section Scripts{
+    <style type="text/css">
+        #txtSDate.datewidth, #txtEDate.datewidth {
+            width: 48.5%;
+        }
+
+        .datemargin {
+            margin-left: 3%;
+            margin-top: -1.4em;
+        }
+    </style>
+
+    <!-- 1. Load -->
+    <script type="text/javascript">
+        var _startDate = '@ViewBag.StartDate';
+        var _nowDate = '@ViewBag.NowDate';
+        $(document).ready(function () {
+            $('.form_datetime').datetimepicker({
+                format: "yyyy-mm-dd",
+                minView: 2,
+                autoclose: true,
+                todayBtn: true,
+                todayHighlight: 1,
+                pickerPosition: "bottom-right",
+                language: "zh-CN",
+                //endDate: _nowDate,
+                forceParse: 0
+            });
+            DateFormatCheckEvent("txtSDate");
+            DateFormatCheckEvent("txtEDate");
+            Initialize();
+            InitData();
+        });
+    </script>
+    <!-- 2. Init -->
+    <script type="text/javascript">
+        function Initialize() {
+            fn_GridInit();
+            var width = $("div.ui-jqgrid-bdiv").width();
+            $("div.ui-jqgrid-sdiv").css("width", width);
+            $("#btnSearch").on("click", function () {
+                fn_Search();
+            });
+        }
+
+        function InitData() {
+            $('#txtSDate').val(_startDate);
+            $('#txtEDate').val(_nowDate);
+            fn_initStatus();
+        }
+    </script>
+    <!-- 3. Validate -->
+    <script type="text/javascript">
+    </script>
+    <!-- 4. Custom Function -->
+    <script type="text/javascript">
+        function fn_initStatus() {
+            // $.sa.get('http://infiqaapi.elandcloud.com/infi/api/v1/PlanTask/GetStatus',
+            $.sa.get(TASKGETSTATUS,
+                       { GroupCode: '02' },
+                       {
+                           "success": function (data) {
+                               if (data != null) {
+                                   
+                                   $('#selStatus').html(JsonToCboList("Name", "Value", JSON.parse(data.body), { "SelectType": "ALL" }));
+                                   //$.sa.warning(data.body);
+                               }
+                           },
+                           "failure": function (data, statusText, jqXHR) {
+                               $.sa.warning(data.msg);
+                           }
+                       });
+        }
+        function fn_Search() {
+            var sdate = $("#txtSDate").val().replace(/\-/gi, '');
+            var edate = $("#txtEDate").val().replace(/\-/gi, '');
+            if (sdate > edate) {
+                $.sa.warning("结束日期不能小于开始日期.");
+                return;
+            }
+            var type = $("#selType").val();
+            var status = $("#selStatus").val();
+            var noticeno = $("#txtCode").val();
+            var title = $("#txtTitle").val();
+            //$.sa.get('http://localhost:6505/infi/api/v1/NotifiFeedB/searchNoticeFeedbackList',
+            $.sa.get(SEARCHNOTICEFEEDBACKLIST,
+                          { SDate: sdate, EDate: edate, UserID: '@Context.Request.Cookies[SessionKeys.SESSION_USERID]', FeedBackYN: type, ApprovalStatus: status, NoticeNo: noticeno, Title: title },
+                          //{ UserId:"1036",Date:"20161111"},
+                          {
+                              "success": function (data) {
+                                  if (data != null && JSON.parse(data.body).length > 0) {
+                                      //$('#selStatus').html(JsonToCboList("Name", "Code", JSON.parse(data.body), { "SelectType": "ALL" }));
+                                      fn_SetGrid(JSON.parse(data.body));
+                                  } else {
+                                      $.sa.warning("没有查询到数据！");
+                                      fn_SetGrid("");
+                                  }
+                              },
+                              "failure": function (data, statusText, jqXHR) {
+                                  fn_SetGrid("");
+                                  $.sa.warning(data.msg);
+                              }
+                          }, $("body"));
+        }
+        function fn_FeedBackNotice(noticeid, disid, departid, feedbackyn, status) {
+            $.sa.pop('/Notice/NOT030P', {
+                height: '520px', width: '800px', title: '<span class="fa fa-hand-o-right gap-icon-right"></span><span>通知反馈</span>',
+                params: {
+                    NoticeId: noticeid,
+                    DisId: disid,
+                    DepartId: departid,
+                    FeedbackYN: feedbackyn,
+                    Status: status
+                }
+          , popcallback: function (msg) {
+              if (msg != null && msg.length > 0) {
+                  fn_Search();
+                  $.sa.warning("修改成功！");
+              }
+          }
+            });
+            setTimeout(function () { fn_Search(); }, 1000);
+        }
+        function fn_GetNoticeDetail(noticeid, disid, departid, status) {
+            $.sa.pop('/Notice/NOT010P', {
+                width: '900px', height: '520px', title: '<span class="fa fa-hand-o-right gap-icon-right"></span><span>通知详细</span>',
+                params: {
+                    pamId: noticeid,
+                    pamDisId: disid,
+                    pamDepartId: departid,
+                    pamStatus: status
+                }
+         , popcallback: function (msg) {
+             if (msg != null && msg.length > 0) {
+                 fn_Search();
+                 //$.sa.warning("修改成功！");
+             }
+                }
+            });
+            setTimeout(function () { fn_Search();}, 1000);
+        }
+        function fn_SetStatus() {
+            var type = $("#selType").val();
+            if (type == "N") {
+                $("#selStatus").val("0");
+                $("#selStatus").attr("disabled", "disabled");
+            } else {
+                $("#selStatus").removeAttr("disabled");
+            }
+        }
+        function fn_GetFeedBackLogList(noticeReaderid, Islog) {
+            if (Islog == "N") {
+                $.sa.warning("没有反馈记录.");
+                return;
+            }
+            $.sa.pop('/Notice/NOT021P', {
+                width: '850px', height: '520px', title: '<span class="fa fa-hand-o-right gap-icon-right"></span><span>反馈记录</span>',
+                params: {
+                    NoticeReaderId: noticeReaderid
+                }
+       , popcallback: function (msg) {
+           if (msg != null && msg.length > 0) {
+               fn_Search();
+               //$.sa.warning("修改成功！");
+           }
+       }
+            });
+        }
+    </script>
+    <!-- 5. Grid -->
+    <script type="text/javascript">
+        function fn_GridInit() {
+            $('#gridFDNotice').jqGrid({
+                datatype: 'local',
+                colModel: [
+                    {
+                        name: 'NoticeNo', label: '编号', width: 130, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'Title', label: '标题', width: 300, align: 'left',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'NeedReplyName', label: '是否反馈', width: 70, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'StatusName', label: '通知状态', width: 100, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }, formatter: function (v, o, r) {
+                            if (r.NeedReply =="False") {
+                                return r.StatusName;
+                            } else {
+                                return r.StatusName;
+                            }
+                        }
+                    },
+                    {
+                        name: 'FeedbackName', label: '通知角色', width: 90, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                     {
+                         name: 'MadeDate', label: '制作日期', width: 120, align: 'center',
+                         cellattr: function (rowId, val, rawObject, cm, rdata) {
+                             return 'class="readonlycell"';
+                         }
+                     },
+                     {
+                         name: 'MadeUserName', label: '制作人', width: 90, align: 'center',
+                         cellattr: function (rowId, val, rawObject, cm, rdata) {
+                             return 'class="readonlycell"';
+                         }
+                     },
+                     {
+                         name: 'Rate', label: '操作', width: 100, align: 'center',
+                         cellattr: function (rowId, val, rawObject, cm, rdata) {
+                             return 'class="readonlycell"';
+                         }, formatter: function (v, o, r) {
+                             if (r.FeedbackYN == "Y" && r.NeedReply == "True" && (r.Status == "R" || r.Status == "N")) {
+                                 return '<button type="button" class="btn btn-primary btn-sm"  style="width:100%;"  onclick="fn_FeedBackNotice(\'' + r.NoticeId + '\',\'' + r.DisId + '\',\'' + r.DepartId + '\',\'' + r.FeedbackYN + '\',\'' + r.Status + '\')">反馈</button>';
+                             } else if (r.NeedReply == "False") {
+                                 return '<button type="button" class="btn btn-detail btn-sm"  style="width:100%;"  onclick="fn_GetNoticeDetail(\'' + r.NoticeId + '\',\'' + r.DisId + '\',\'' + r.DepartId  + '\',\'' + r.Status + '\')">详细</button>';
+                             } else {
+                                 return '<button type="button" class="btn btn-detail btn-sm"  style="width:100%;"  onclick="fn_FeedBackNotice(\'' + r.NoticeId + '\',\'' + r.DisId + '\',\'' + r.DepartId + '\',\'' + r.FeedbackYN + '\',\'' + r.Status + '\')">详细</button>';
+                             }
+                         }, unformat: function () {
+                             return 0;
+                         }
+                     },
+                     {
+                         name: 'Delete', label: '反馈记录', width: 90, align: 'center',
+                         cellattr: function (rowId, val, rawObject, cm, rdata) {
+                             return 'class="readonlycell"';
+                         }, formatter: function (v, o, r) {
+                             if (r.NeedReply == "False") {
+                                 return '<button type="button" class="btn btn-primary btn-sm"  style="width:100%;"  onclick="fn_GetFeedBackLogList(' + r.NoticeReaderId + ')" disabled>反馈记录</button>';
+                             }else{
+                                 return '<button type="button" class="btn btn-primary btn-sm"  style="width:100%;"  onclick="fn_GetFeedBackLogList(\'' + r.NoticeReaderId + '\',\'' + r.IsLog + '\')">反馈记录</button>';
+                             }
+                         }, unformat: function (v, o, r) {
+                             return "";
+                         }
+                     },
+                     {
+                         name: 'NoticeReaderId', label: 'NoticeReaderId', width: 103, align: 'center', hidden: true
+                     },
+                     {
+                         name: 'FeedbackYN', label: 'FeedbackYN', width: 103, align: 'center', hidden: true
+                     },
+                     {
+                         name: 'Status', label: 'Status', width: 103, align: 'center', hidden: true
+                     },
+                     {
+                         name: 'NeedReply', label: 'NeedReply', width: 103, align: 'center', hidden: true
+                     },
+                     {
+                         name: 'FeedbackUserId', label: 'FeedbackUserId', width: 103, align: 'center', hidden: true
+                     },
+                     {
+                         name: 'NoticeId', label: 'NoticeId', width: 103, align: 'center', hidden: true
+                     }
+                     ,
+                     {
+                         name: 'DisId', label: 'DisId', width: 103, align: 'center', hidden: true
+                     },                     
+                     {
+                         name: 'DepartId', label: 'DepartId', width: 103, align: 'center', hidden: true
+                     },                     
+                     {
+                         name: 'IsLog', label: 'IsLog', width: 103, align: 'center', hidden: true
+                     }
+                ],
+                width: $('#Grid').width(),
+                shrinkToFit: false,
+                height: 'auto',
+                rownumbers: true,
+                rownumWidth: 40,
+                rowNum: 15,
+                rowList: [15, 30, 45],
+                footerrow: false,
+                cellsubmit: 'clientArray',
+                pager: jQuery('#pager'),
+                cellEdit: true,
+                editurl: 'clientArray',
+                viewrecords: true,
+                //autoScroll: false,
+                gridComplete: function (id) {
+                    var rowNum = parseInt($(this).getGridParam("records"), 50);
+                    if (rowNum > 0) {
+                        $(".ui-jqgrid-sdiv").show();
+                    }
+                    else {
+                        $(".ui-jqgrid-sdiv").hide();
+                        //                    ShowNoDataDiv("grid","msg","没有数据");
+                    }
+
+                    //fix the pager position
+                    $('#pager_left').css('width', '25%');
+                    $('#pager_right').css('width', '25%');
+
+                    $("[aria-describedby='gridFDNotice_rn']").addClass("readonlycell");
+                }
+            });
+        }
+
+        function fn_SetGrid(mydata) {
+            mydata = mydata || [];
+            $('#gridFDNotice').clearGridData()
+            .setGridParam({
+                data: mydata
+            }).trigger('reloadGrid');
+        }
+    </script>
+}
+<div class="">
+    <div class="row" style="margin-top:10px;">
+        <div class="col-md-12">
+            <span class="fa fa-flag fa-lg gap-icon"></span><span class="page-mtitle">通知公告</span><span>&nbsp;>&nbsp;</span><span class="page-title">反馈列表</span>
+            <div class="pull-right">
+                <button id="btnSearch" class="btn btn-primary">
+                    <span class="fa fa-search gap-icon"></span>查询
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="row" style="margin-top:10px;">
+        <div class="col-md-4 col-sm-6">
+            <div class="input-group">
+                <span class="input-group-addon title-sm ">期间</span>
+                <input size="16" type="text" value="" class="form_datetime form-control text-center datewidth"
+                       id="txtSDate" />
+                <span>~</span>
+                <input size="16" type="text" value="" class="form_datetime form-control text-center datewidth datemargin"
+                       id="txtEDate" />
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="input-group ">
+                <span class="input-group-addon title-sm">是否反馈</span>
+                <select class="form-control" id="selType" onchange="fn_SetStatus();">
+                    <option value="">全部</option>
+                    <option value="1">需要</option>
+                    <option value="0">不需要</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="input-group">
+                <span class="input-group-addon title-sm">通知状态</span>
+                <select class="form-control" id="selStatus"></select>
+            </div>
+        </div>
+    </div>
+    <div class="row" style="margin-top:10px;">
+        <div class="col-md-4">
+            <div class="input-group ">
+                <span class="input-group-addon title-sm">通知编号</span>
+                <input size="16" type="text" value="" class="form-control" id="txtCode" />
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="input-group">
+                <span class="input-group-addon title-sm">通知标题</span>
+                <input size="16" type="text" value="" class="form-control" id="txtTitle" />
+            </div>
+        </div>
+    </div>
+    <div class="row" style="margin-top:10px;">
+        <div id="Grid" class="col-md-12">
+            <table id="gridFDNotice" class="ui-jqgrid-htable"></table>
+            <div id="pager" class="page">
+            </div>
+        </div>
+    </div>
+</div>

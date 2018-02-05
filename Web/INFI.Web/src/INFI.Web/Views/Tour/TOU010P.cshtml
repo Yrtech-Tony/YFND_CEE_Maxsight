@@ -1,0 +1,179 @@
+﻿@{
+    Layout = "_LayoutOfPop";
+    ViewData["Title"] = "经销商列表POP";
+}
+@section Scripts{
+    <style type="text/css">
+        body {
+            padding-top: 5px;
+        }
+    </style>
+    <!-- 1. Load -->
+    <script type="text/javascript">
+        var _type = "";
+        $(document).ready(function () {
+            _type = Request["Type"];
+            Initialize();
+            //InitData();
+        });
+    </script>
+
+    <!-- 2. Init -->
+    <script type="text/javascript">
+        function Initialize() {
+            fn_GridInit();
+            var width = $("div.ui-jqgrid-bdiv").width();
+            $("div.ui-jqgrid-sdiv").css("width", width);
+            $("#btnSearch").on("click", function () {
+                fn_Search();
+            });
+        }
+
+        function InitData() {
+            fn_initData();
+        }
+    </script>
+    <!-- 3. Validate -->
+    <script type="text/javascript">
+    </script>
+    <!-- 4. Custom Function -->
+    <script type="text/javascript">
+        function fn_initData() {
+            fn_Search();
+        }
+        function fn_Search() {
+            var jsonUrl = "";
+            // 查询所有经销商
+            if (_type == "S") {
+                jsonUrl = SEARCHNOTIFIDIS;
+            } else {
+                jsonUrl = GETTOURDISTRIBUTORLIST;
+            }
+            //$.sa.get('http://infiqaapi.elandcloud.com/infi/api/v1/Tour/GetTourDistributorList',
+            $.sa.get(jsonUrl,
+                           {
+                               UserId: "@Context.Request.Cookies[SessionKeys.SESSION_USERID]"
+                               , disCode: $.trim($("#txtCode").val()) == "" ? '%' : $.trim($("#txtCode").val())
+                               , disName: $.trim($("#txtName").val()) == "" ? '%' : $.trim($("#txtName").val())
+                           },
+                           {
+                               "success": function (data) {
+                                   if (data != null && JSON.parse(data.body).length > 0) {
+                                       fn_SetGrid(JSON.parse(data.body));
+                                   } else {
+                                       $.sa.warning("没有查询到数据！");
+                                       fn_SetGrid("");
+                                   }
+                               },
+                               "failure": function (data, statusText, jqXHR) {
+                                   fn_SetGrid("");
+                                   $.sa.warning(data.msg);
+                               }
+                           }, $("body"));
+        }
+    </script>
+
+
+    <!-- 5. Grid -->
+    <script type="text/javascript">
+        function fn_GridInit() {
+            $('#gridDis').jqGrid({
+                datatype: 'local',
+                colModel: [
+                    {
+                        name: 'DisId', label: '经销商代码', width: 125, align: 'center', hidden: true,
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell dotdotdot"';
+                        }
+                    },
+                    {
+                        name: 'DisCode', label: '经销商代码', width: 125, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell dotdotdot"';
+                        }
+                    },
+                    {
+                        name: 'DisName', label: '经销商名', width: 320, align: 'left',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell dotdotdot"';
+                        }
+                    }
+
+                ],
+                width: $('#Grid').width(),
+                shrinkToFit: false,
+                height: 'auto',
+                rownumbers: true,
+                rownumWidth: 30,
+                rowNum: 15,
+                rowList: [15, 30, 45],
+                footerrow: false,
+                cellsubmit: 'clientArray',
+                pager: jQuery('#pager'),
+                cellEdit: true,
+                editurl: 'clientArray',
+                viewrecords: true,
+                //autoScroll: false,
+                gridComplete: function (id) {
+                    var rowNum = parseInt($(this).getGridParam("records"), 50);
+                    if (rowNum > 0) {
+                        $(".ui-jqgrid-sdiv").show();
+                    }
+                    else {
+                        $(".ui-jqgrid-sdiv").hide();
+                    }
+
+                    //fix the pager position
+                    $('#pager_left').css('width', '25%');
+                    $('#pager_right').css('width', '25%');
+
+                    $("[aria-describedby='gridDis_rn']").addClass("readonlycell");
+                },
+                ondblClickRow: function (rowid, iRow, iCol, e) {
+                    var rowData = $("#gridDis").jqGrid("getRowData", rowid);
+                    var disList = [];
+                    disList.push(rowData);
+                    window.parent.popcallback(disList);
+                }
+            });
+        }
+
+        function fn_SetGrid(mydata) {
+            mydata = mydata || [];
+            $('#gridDis').clearGridData()
+            .setGridParam({
+                data: mydata
+            }).trigger('reloadGrid');
+        }
+    </script>
+}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xs-12">
+            <button id="btnSearch" class="btn btn-primary pull-right">
+                <span class="fa fa-search gap-icon"></span>查询
+            </button>
+        </div>
+    </div>
+    <div class="row gap-top">
+        <div class="col-xs-5">
+            <div class="input-group">
+                <span class="input-group-addon title-sm">经销商代码</span>
+                <input size="16" type="text"  class="form-control" id="txtCode" />
+            </div>
+        </div>
+        <div class="col-xs-7">
+            <div class="input-group">
+                <span class="input-group-addon title-sm">经销商名</span>
+                <input size="16" type="text" class="form-control" id="txtName" />
+            </div>
+        </div>
+    </div>
+    <div class="row-fluid">
+        <div id="Grid" class="col-xs-12" style="margin-top:5px;">
+            <table id="gridDis" class="ui-jqgrid-htable"></table>
+            <div id="pager" class="page">
+            </div>
+        </div>
+    </div>
+</div>

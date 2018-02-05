@@ -1,0 +1,610 @@
+﻿@{
+    Layout = "_LayoutOfPop";
+    ViewData["Title"] = "职员登记";
+}
+@section HeadCss{
+    <style>
+        #selZionLst.orgWidth, #selAreaLst.orgWidth,
+        #selServerLst.orgWidth, #selDepartmentLst.orgWidth {
+            width: 25%;
+        }
+
+        /*input:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0px 1000px white inset;
+        }*/
+    </style>
+}
+@section Scripts{
+    <!-- 1. Load -->
+    <script type="text/javascript">
+        $(document).ready(function () {
+            zionServerLst = '';
+            departmentLst = '@Context.Request.Cookies[SessionKeys.SESSION_DEPARTMENTLIST]'.replace(/&quot;/g, '"');
+            fn_Initial();
+            fn_InitialData();
+        });
+    </script>
+    <!-- 2. Init -->
+    <script type="text/javascript">
+        function fn_Initial() {
+            $('#btnSave').on('click', function () {
+                fn_SaveEmpInfo();
+            });
+            $("#selAreaLst").change(function () {
+                fn_SetServerData();
+            });
+            $("#selZionLst").change(function () {
+                fn_SetAreaData();
+            });
+            $("#selUserType").change(function () {
+                fn_SetOrgControlStatus();
+            });
+
+            $("[name=txtPwd]").on('focus', function () {
+                /*当前文本框隐藏*/
+                $(this).hide();
+                /*隐藏的密码框显示并且获取焦点 只读属性去掉*/
+                $('#txtPassword').show().attr('readonly', false).focus();
+            });
+
+            $("[name=txtPwd1]").on('focus', function () {
+                /*当前文本框隐藏*/
+                $(this).hide();
+                /*隐藏的密码框显示并且获取焦点 只读属性去掉*/
+                $('#txtConfirmPassword').show().attr('readonly', false).focus();
+            });
+        }
+    </script>
+    <!-- 3. InitData -->
+    <script type="text/javascript">
+        function fn_InitialData() {
+            $.sa.get(TASKGETSTATUS, { GroupCode: '04' },
+              {
+                  "success": function (data) {
+                      fn_SetUserTypeData(data);
+                      fn_SetOrgData();
+                  },
+                  "failure": function (data, statusText, jqXHR) {
+                  }
+              });
+        }
+        function fn_SetUserTypeData(data) {
+            var typeLst = JSON.parse(data.body);
+            var loginUserType = '@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]';
+            if (loginUserType == 'R') {
+                typeLst.shift();
+            } else if (loginUserType == 'Z') {
+                typeLst.shift();
+                typeLst.shift();
+            } else if (loginUserType == 'S') {
+                typeLst.shift();
+                typeLst.shift();
+                typeLst.shift();
+            } else if (loginUserType == 'D') {
+                typeLst.shift();
+                typeLst.shift();
+                typeLst.shift();
+                typeLst.shift();
+            }
+            $("#selUserType").html(JsonToCboList("Name", "Value", typeLst));
+        }
+        function fn_SetOrgData() {
+            $.sa.get(GETORGINFO, { UserId: '@Context.Request.Cookies[SessionKeys.SESSION_USERID]' },
+              {
+                  "success": function (data) {
+                      zionServerLst = data.body;
+                      $("#selZionLst").html(JsonToCboList("QName", "QId", JSON.parse(zionServerLst), { 'SelectType': 'Select' }));
+                      $("#selAreaLst").html(JsonToCboList("AName", "AId", null, { 'SelectType': 'Select' }));
+                      $("#selServerLst").html(JsonToCboList("SName", "SId", null, { 'SelectType': 'Select' }));
+                      fn_SetAreaData();
+                      $("#selDepartmentLst").html(JsonToCboList("DName", "DId", JSON.parse(departmentLst), { 'SelectType': 'Select' }));
+                      fn_SetOrgControlStatus();
+                      fn_GetEmpInfoById();
+                  },
+                  "failure": function (data, statusText, jqXHR) {
+                  }
+              });
+        }
+        function fn_SetAreaData() {
+            var currentZion = $("#selZionLst").val();
+            $("#selAreaLst").html(JsonToCboList("AName", "AId", null, { 'SelectType': 'Select' }));
+            $("#selServerLst").html(JsonToCboList("SName", "SId", null, { 'SelectType': 'Select' }));
+            $.each(JSON.parse(zionServerLst), function (i, v) {
+                if (v.QId == currentZion) {
+                    $("#selAreaLst").html(JsonToCboList("AName", "AId", v.AreaList, { 'SelectType': 'Select' }));
+                }
+            });
+        }
+        function fn_SetServerData() {
+            var currentZion = $("#selZionLst").val();
+            var currentArea = $("#selAreaLst").val();
+            $("#selServerLst").html(JsonToCboList("SName", "SId", null, { 'SelectType': 'Select' }));
+            $.each(JSON.parse(zionServerLst), function (i, v) {
+                if (v.QId == currentZion) {
+                    $.each(v.AreaList, function (index, value) {
+                        if (value.AId == currentArea) {
+                            $("#selServerLst").html(JsonToCboList("SName", "SId", value.ServerList, { 'SelectType': 'Select' }));
+                        }
+                    });
+                }
+            });
+        }
+        function fn_SetOrgControlStatus() {
+            var userType = $("#selUserType").val();
+            var loginUserType = '@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]';
+            var OrgZionId = '@Context.Request.Cookies[SessionKeys.SESSION_ORGZIONID]';
+            var OrgAreaId = '@Context.Request.Cookies[SessionKeys.SESSION_ORGAREAID]';
+            var OrgServerId = '@Context.Request.Cookies[SessionKeys.SESSION_ORGSERVERID]';
+            var OrgDepartmentId = '@Context.Request.Cookies[SessionKeys.SESSION_ORGDEPARTMENTID]';
+
+            $("#selZionLst").val("select");
+            $("#selAreaLst").val("select");
+            $("#selServerLst").val("select");
+            $("#selDepartmentLst").val("select");
+            if (loginUserType == 'A') {
+                if (userType == "A") {
+                    $("#selZionLst").attr("disabled", "disabled");
+                    $("#selAreaLst").attr("disabled", "disabled");
+                    $("#selServerLst").attr("disabled", "disabled");
+                    $("#selDepartmentLst").attr("disabled", "disabled");
+                } else if (userType == "R") {
+                    $("#selZionLst").removeAttr("disabled");
+                    $("#selAreaLst").attr("disabled", "disabled");
+                    $("#selServerLst").attr("disabled", "disabled");
+                    $("#selDepartmentLst").attr("disabled", "disabled");
+                } else if (userType == "Z") {
+                    $("#selZionLst").removeAttr("disabled");
+                    $("#selAreaLst").removeAttr("disabled");
+                    $("#selServerLst").attr("disabled", "disabled");
+                    $("#selDepartmentLst").attr("disabled", "disabled");
+                } else if (userType == "S") {
+                    $("#selZionLst").removeAttr("disabled");
+                    $("#selAreaLst").removeAttr("disabled");
+                    $("#selServerLst").removeAttr("disabled");
+                    $("#selDepartmentLst").attr("disabled", "disabled");
+                } else {
+                    $("#selZionLst").removeAttr("disabled");
+                    $("#selAreaLst").removeAttr("disabled");
+                    $("#selServerLst").removeAttr("disabled");
+                    $("#selDepartmentLst").removeAttr("disabled");
+                }
+            } else if (loginUserType == 'R') {
+                $("#selZionLst").val(OrgZionId);
+                fn_SetAreaData();
+                $("#selZionLst").attr("disabled", "disabled");
+                if (userType == "R") {
+                    $("#selAreaLst").attr("disabled", "disabled");
+                    $("#selServerLst").attr("disabled", "disabled");
+                    $("#selDepartmentLst").attr("disabled", "disabled");
+                } else if (userType == "Z") {
+                    $("#selAreaLst").removeAttr("disabled");
+                    $("#selServerLst").attr("disabled", "disabled");
+                    $("#selDepartmentLst").attr("disabled", "disabled");
+                } else if (userType == "S") {
+                    $("#selAreaLst").removeAttr("disabled");
+                    $("#selServerLst").removeAttr("disabled");
+                    $("#selDepartmentLst").attr("disabled", "disabled");
+                } else {
+                    $("#selAreaLst").removeAttr("disabled");
+                    $("#selServerLst").removeAttr("disabled");
+                    $("#selDepartmentLst").removeAttr("disabled");
+                }
+            } else if (loginUserType == 'Z') {
+                $("#selZionLst").val(OrgZionId);
+                fn_SetAreaData();
+                $("#selAreaLst").val(OrgAreaId);
+                fn_SetServerData();
+                $("#selZionLst").attr("disabled", "disabled");
+                $("#selAreaLst").attr("disabled", "disabled");
+                if (userType == "Z") {
+                    $("#selServerLst").attr("disabled", "disabled");
+                    $("#selDepartmentLst").attr("disabled", "disabled");
+                } else if (userType == "S") {
+                    $("#selServerLst").removeAttr("disabled");
+                    $("#selDepartmentLst").attr("disabled", "disabled");
+                } else {
+                    $("#selServerLst").removeAttr("disabled");
+                    $("#selDepartmentLst").removeAttr("disabled");
+                }
+            } else if (loginUserType == 'S') {
+                $("#selZionLst").val(OrgZionId);
+                fn_SetAreaData();
+                $("#selAreaLst").val(OrgAreaId);
+                fn_SetServerData();
+                $("#selServerLst").val(OrgServerId);
+                $("#selZionLst").attr("disabled", "disabled");
+                $("#selAreaLst").attr("disabled", "disabled");
+                $("#selServerLst").attr("disabled", "disabled");
+                if (userType == "S") {
+                    $("#selDepartmentLst").attr("disabled", "disabled");
+                } else {
+                    $("#selDepartmentLst").removeAttr("disabled");
+                }
+            } else if (loginUserType == 'D') {
+                $("#selZionLst").val(OrgZionId);
+                fn_SetAreaData();
+                $("#selAreaLst").val(OrgAreaId);
+                fn_SetServerData();
+                $("#selServerLst").val(OrgServerId);
+                $("#selDepartmentLst").val(OrgDepartmentId);
+                $("#selUserType").attr("disabled", "disabled");
+                $("#selZionLst").attr("disabled", "disabled");
+                $("#selAreaLst").attr("disabled", "disabled");
+                $("#selServerLst").attr("disabled", "disabled");
+                $("#selDepartmentLst").attr("disabled", "disabled");
+            }
+        }
+    </script>
+    <!--4. Grid Pictrue-->
+    <script type="text/javascript">
+
+    </script>
+    <!--5. Search-->
+    <script type="text/javascript">
+        function fn_GetEmpInfoById() {
+            if (Request["EmpId"] != undefined && Request["EmpId"] != "") {
+                $("#selUserType").attr("disabled", "disabled");
+                $("#selZionLst").attr("disabled", "disabled");
+                $("#selAreaLst").attr("disabled", "disabled");
+                $("#selServerLst").attr("disabled", "disabled");
+                $("#selDepartmentLst").attr("disabled", "disabled");
+                $("#selUserType").val(Request["UserType"]);
+                if ($("#selUserType").val() == "R") {
+                    $("#selZionLst").val(Request["ZDisId"]);
+                    $("#selAreaLst").val('0');
+                    $("#selServerLst").val('0');
+                    $("#selDepartmentLst").val('0');
+                } else if ($("#selUserType").val() == "Z") {
+                    $("#selZionLst").val(Request["ZDisId"]);
+                    fn_SetAreaData();
+                    $("#selAreaLst").val(Request["ADisId"]);
+                    $("#selServerLst").val('0');
+                    $("#selDepartmentLst").val('0');
+                } else if ($("#selUserType").val() == "S") {
+                    $("#selZionLst").val(Request["ZDisId"]);
+                    fn_SetAreaData();
+                    $("#selAreaLst").val(Request["ADisId"]);
+                    fn_SetServerData();
+                    $("#selServerLst").val(Request["SDisId"]);
+                    $("#selDepartmentLst").val('0');
+                } else if ($("#selUserType").val() == "D") {
+                    $("#selZionLst").val(Request["ZDisId"]);
+                    fn_SetAreaData();
+                    $("#selAreaLst").val(Request["ADisId"]);
+                    fn_SetServerData();
+                    $("#selServerLst").val(Request["SDisId"]);
+                    $("#selDepartmentLst").val(Request["DepartId"]);
+                } else {
+                    $("#selZionLst").val('0');
+                    $("#selAreaLst").val('0');
+                    $("#selServerLst").val('0');
+                    $("#selDepartmentLst").val('0');
+                }
+                $("#txtUserName").val(Request["UserName"]);
+                $("#txtLoginId").val(Request["LoginId"]);
+                $("#txtPassword").val(Request["Password"]);
+                $("#txtConfirmPassword").val(Request["Password"]);
+                $("#txtPhoneNo").val(Request["Phone"] == "null" ? '' : Request["Phone"]);
+                $("#txtCellNo").val(Request["CellNo"] == "null" ? '' : Request["CellNo"]);
+                $("#txtEmail").val(Request["Email"] == "null" ? '' : Request["Email"]);
+                if (Request["UseYN"] == "True") {
+                    $("#quitY").attr("checked", "checked");
+                } else {
+                    $("#quitN").attr("checked", "checked");
+                }
+                if (Request["IsNew"] == "N") {
+                    $("[name=txtPwd]").hide();                  
+                    $('#txtPassword').show().attr('readonly', false).focus();
+                    $("[name=txtPwd1]").hide();                 
+                    $('#txtConfirmPassword').show().attr('readonly', false).focus();
+                }
+            }
+            //else {
+            //    $("#txtLoginId").val("");
+            //    $("#txtPassword").val("");
+            //}
+        }
+    </script>
+    <!--6. Event-->
+    <script type="text/javascript">
+
+    </script>
+    <!--7. Save-->
+    <script type="text/javascript">
+        function fn_SaveValidate() {
+            var userType = $("#selUserType").val();
+            if (userType == "R") {
+                if ($("#selZionLst").val() == "select") {
+                    $.sa.warning("请选择厂家", {
+                        title: "警告！", fnClose: function () {
+                            $("#selZionLst").focus();
+                        }
+                    });
+                    return false;
+                }
+            } else if (userType == "Z") {
+                if ($("#selZionLst").val() == "select") {
+                    $.sa.warning("请选择厂家", {
+                        title: "警告！", fnClose: function () {
+                            $("#selZionLst").focus();
+                        }
+                    });
+                    return false;
+                } else if ($("#selAreaLst").val() == "select") {
+                    $.sa.warning("请选择地区", {
+                        title: "警告！", fnClose: function () {
+                            $("#selAreaLst").focus();
+                        }
+                    });
+                    return false;
+                }
+            } else if (userType == "S") {
+                if ($("#selZionLst").val() == "select") {
+                    $.sa.warning("请选择厂家", {
+                        title: "警告！", fnClose: function () {
+                            $("#selZionLst").focus();
+                        }
+                    });
+                    return false;
+                } else if ($("#selAreaLst").val() == "select") {
+                    $.sa.warning("请选择地区", {
+                        title: "警告！", fnClose: function () {
+                            $("#selAreaLst").focus();
+                        }
+                    });
+                    return false;
+                } else if ($("#selServerLst").val() == "select") {
+                    $.sa.warning("请选择经销商", {
+                        title: "警告！", fnClose: function () {
+                            $("#selServerLst").focus();
+                        }
+                    });
+                    return false;
+                }
+            } else if (userType == "D") {
+                if ($("#selZionLst").val() == "select") {
+                    $.sa.warning("请选择厂家", {
+                        title: "警告！", fnClose: function () {
+                            $("#selZionLst").focus();
+                        }
+                    });
+                    return false;
+                } else if ($("#selAreaLst").val() == "select") {
+                    $.sa.warning("请选择地区", {
+                        title: "警告！", fnClose: function () {
+                            $("#selAreaLst").focus();
+                        }
+                    });
+                    return false;
+                } else if ($("#selServerLst").val() == "select") {
+                    $.sa.warning("请选择经销商", {
+                        title: "警告！", fnClose: function () {
+                            $("#selServerLst").focus();
+                        }
+                    });
+                    return false;
+                } else if ($("#selDepartmentLst").val() == "select") {
+                    $.sa.warning("请选择部门", {
+                        title: "警告！", fnClose: function () {
+                            $("#selDepartmentLst").focus();
+                        }
+                    });
+                    return false;
+                }
+            }
+            if ($("#txtUserName").val().trim() == "") {
+                $.sa.warning("请输入用户名", {
+                    title: "警告！", fnClose: function () {
+                        $("#txtUserName").focus();
+                    }
+                });
+                return false;
+            }
+            if ($("#txtLoginId").val().trim() == "") {
+                $.sa.warning("请输入登录Id", {
+                    title: "警告！", fnClose: function () {
+                        $("#txtLoginId").focus();
+                    }
+                });
+                return false;
+            }
+            if ($("#txtPassword").val().trim() == "") {
+                $.sa.warning("请输入密码", {
+                    title: "警告！", fnClose: function () {
+                        $("#txtPassword").focus();
+                    }
+                });
+                return false;
+            }
+            if ($("#txtConfirmPassword").val().trim() == "") {
+                $.sa.warning("请输入确认密码", {
+                    title: "警告！", fnClose: function () {
+                        $("#txtConfirmPassword").focus();
+                    }
+                });
+                return false;
+            }
+            if ($("#txtPassword").val().trim() != $("#txtConfirmPassword").val().trim()) {
+                $.sa.warning("输入的密码与确认密码不一致", {
+                    title: "警告！", fnClose: function () {
+                        $("#txtConfirmPassword").focus();
+                    }
+                });
+                return false;
+            }
+            if ($("#txtPhoneNo").val().trim() == "" || !(/^1(3|4|5|7|8)\d{9}$/.test($("#txtPhoneNo").val().trim()))) {
+                $.sa.warning("请输入正确的手机号", {
+                    title: "警告！", fnClose: function () {
+                        $("#txtPhoneNo").focus();
+                    }
+                });
+                return false;
+            }
+            if ($("#txtCellNo").val().trim() != "" && !/^(\(\d{3,4}\)|\d{3,4}-|\s)?\d{7,14}$/.test($("#txtCellNo").val().trim())) {
+                $.sa.warning("请输入正确的电话号", {
+                    title: "警告！", fnClose: function () {
+                        $("#txtCellNo").focus();
+                    }
+                });
+                return false;
+            }
+            return true;
+        }
+        function fn_SaveEmpInfo() {
+            if (fn_SaveValidate()) {
+                var confirmDialog = $.sa.confirm('是否要保存？', {
+                    fnOk: fn_Save
+                });
+            }
+        }
+        function fn_Save() {
+            var disId = "";
+            var departmentId = "";
+            var userType = $("#selUserType").val();
+            if (userType == "R") {
+                disId = $("#selZionLst").val();
+            } else if (userType == "Z") {
+                disId = $("#selAreaLst").val();
+            } else if (userType == "S") {
+                disId = $("#selServerLst").val();
+            } else if (userType == "D") {
+                disId = $("#selServerLst").val();
+                departmentId = $("#selDepartmentLst").val();
+            }
+            var param = {};
+            param["EmpId"] = Request["EmpId"] == undefined || Request["EmpId"] == null ? 0 : parseInt(Request["EmpId"]);
+            param["DisId"] = disId;
+            param["DepartId"] = departmentId;
+            param["UserType"] = userType;
+            param["UserName"] = $("#txtUserName").val().trim();
+            param["LoginId"] = $("#txtLoginId").val().trim();
+            param["Password"] = $("#txtPassword").val().trim();
+            param["CellNo"] = $("#txtCellNo").val().trim();
+            param["PhoneNo"] = $("#txtPhoneNo").val().trim();
+            param["Email"] = $("#txtEmail").val().trim();
+            param["UseYN"] = $("[name=quitYN]").filter(":Checked").val();
+
+            $.sa.post(SAVEEMPLOYEEINFO,
+                JSON.stringify(param),
+                     {
+                         "success": function (data) {
+                             if (data != null) {
+                                 $.sa.alert('保存完成', { maxWidth: '400px', minWidth: '300px', showClose: false });
+                                 window.parent.popcallback();
+                             }
+                         },
+                         "failure": function (data, statusText, jqXHR) {
+                         }
+                     }
+                     , $("body"));
+        }
+    </script>
+}
+<form action="/" autocomplete="new-password" name="form1">
+    <div class="row">
+        <div class="col-md-4 col-sm-4">
+            <div class="input-group">
+                <span class="input-group-addon title-sm "><font color="red">*</font>&nbsp;用户类型</span>
+                <select class="form-control" id="selUserType"></select>
+            </div>
+        </div>
+    </div>
+    <div class="row gap-top">
+        <div class="col-md-12 col-sm-12">
+            <div class="input-group">
+                <span class="input-group-addon title-sm ">&nbsp;组织结构</span>
+                <select class="form-control orgWidth" id="selZionLst"></select>
+                <select class="form-control orgWidth" id="selAreaLst"></select>
+                <select class="form-control orgWidth" id="selServerLst"></select>
+                <select class="form-control orgWidth" id="selDepartmentLst"></select>
+            </div>
+        </div>
+    </div>
+    <div class="row gap-top">
+        <div class="col-md-12 col-sm-12">
+            <div class="input-group">
+                <span class="input-group-addon title-sm "><font color="red">*</font>&nbsp;用户名</span>
+                <input class="form-control" id="txtUserName" maxlength="100" />
+            </div>
+        </div>
+    </div>
+    <div class="row gap-top">
+        <div class="col-md-12 col-sm-12">
+            <div class="input-group">
+                <span class="input-group-addon title-sm "><font color="red">*</font>&nbsp;登录Id</span>
+                <input class="form-control" id="txtLoginId" name="txtLoginId" autocomplete="new-password" maxlength="100" />
+            </div>
+        </div>
+    </div>
+    <div class="row gap-top">
+        <div class="col-md-6 col-sm-6">
+            <div class="input-group">
+                <span class="input-group-addon title-sm "><font color="red">*</font>&nbsp;密码</span>
+                <input class="form-control" value="" type="text" name="txtPwd" id="txtPwd" />
+                <input class="form-control" type="password" id="txtPassword" name="txtPassword" style="display: none" readonly="readonly" autocomplete="new-password" maxlength="100" />
+            </div>
+        </div>
+        <div class="col-md-6 col-sm-6">
+            <div class="input-group">
+                <span class="input-group-addon title-sm "><font color="red">*</font>&nbsp;确认密码</span>
+                <input class="form-control" value="" type="text" name="txtPwd1" id="txtPwd" />
+                <input class="form-control" type="password" id="txtConfirmPassword" style="display: none" readonly="readonly" name="txtConfirmPassword" autocomplete="new-password" maxlength="100" />
+            </div>
+        </div>
+    </div>
+    <div class="row gap-top">
+        <div class="col-md-12 col-sm-12">
+            <div class="input-group">
+                <span class="input-group-addon title-sm "><font color="red">*</font>&nbsp;手机号</span>
+                <input class="form-control" id="txtPhoneNo" maxlength="100" />
+            </div>
+        </div>
+    </div>
+    <div class="row gap-top">
+        <div class="col-md-12 col-sm-12">
+            <div class="input-group">
+                <span class="input-group-addon title-sm ">&nbsp;电话号码</span>
+                <input class="form-control" id="txtCellNo" maxlength="100" />
+            </div>
+        </div>
+    </div>
+    <div class="row gap-top">
+        <div class="col-md-12 col-sm-12">
+            <div class="input-group">
+                <span class="input-group-addon title-sm ">&nbsp;邮箱</span>
+                <input class="form-control" id="txtEmail" maxlength="100" />
+            </div>
+        </div>
+    </div>
+    <div class="row gap-top">
+        <div class="col-md-12 col-sm-12">
+            <div class="input-group">
+                <span class="input-group-addon title-sm "><font color="red">*</font>&nbsp;使用与否</span>
+                <div class="form-control" id="quitYN">
+                    <label class="radio-inline">
+                        <input type="radio" name="quitYN" id="quitY" value="True" checked />
+                        使用
+                    </label>
+                    <label class="radio-inline">
+                        <input type="radio" name="quitYN" id="quitN" value="False" />
+                        不使用
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div id="Grid" class="col-md-12">
+            <table id="grid" class="ui-jqgrid-htable"></table>
+            <div id="pager" class="page">
+            </div>
+        </div>
+    </div>
+    <div class="row" style="position: absolute; left: 45%; margin-top: 1em">
+        <div class="col-md-12 col-sm-6 gap-top">
+            <button type="button" class="btn btn-primary" id="btnSave">
+                <span class="fa fa-save gap-icon"></span><span>保存</span>
+            </button>
+        </div>
+    </div>
+</form>

@@ -1,0 +1,560 @@
+﻿@{
+    Layout = "_LayoutOfPop";
+    ViewData["Title"] = "Case";
+}
+@section HeadCss{
+   
+    <style>
+        #txtSDate.datewidth, #txtEDate.datewidth {
+            width: 48.5%;
+        }
+
+        .datemargin {
+            margin-left: 3%;
+            margin-top: -1.4em;
+        }
+
+        .gap-icon {
+            margin-right: 5px;
+        }
+
+        .jqgridbuttonwidth {
+            width: 90%;
+        }
+
+        /*.inputWidth {
+            width: auto !important;
+        }*/
+
+        #input_noticedis_id {
+            max-width: 35.6%;
+            font-size:12px;
+        }
+
+        #input_noticedep_id {
+            max-width: 35.6%;
+            font-size:12px;
+        }
+         #btn_clear_id{
+          margin-left:10px;
+        }
+         #btn_save_id{
+           margin-left:10px;
+         }
+    </style>
+}
+<div class="row">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="input-group">
+            <span class="input-group-addon title-sm"><font color="red">*</font>&nbsp;通知标题</span>
+            <input type="text" class="form-control" id="input_noticetitle_id" maxlength="200" />
+        </div>
+    </div>
+</div>
+<div class="row gap-top">
+    <div class="col-md-4 col-sm-4 col-xs-4">
+        <div class="input-group">
+            <span class="input-group-addon title-sm "><font color="red">*</font>&nbsp;是否反馈</span>
+            <div class="form-control" id="radio_noticereply_id">
+                <label class="radio-inline">
+                    <input type="radio" name="radio_noticereply_name" id="radio_reply_n" value="0" />否
+                </label>
+                <label class="radio-inline">
+                    <input type="radio" name="radio_noticereply_name" id="radio_reply_y" value="1" />是
+                </label>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-sm-6 col-xs-6">
+        <div class="form-inline input-group">
+            <label class="input-group-addon title-sm"><font color="red">*</font>&nbsp;通知对象</label>
+            <input type="text" class="form-control inputWidth" id="input_noticedis_id" readonly>
+            <button class="btn btn-primary" style="float:left" id="btnChooseDis">...</button>
+            <input type="text" class="form-control inputWidth" id="input_noticedep_id" readonly>
+            <button class="btn btn-primary" style="float:left" id="btnChooseDep">...</button>
+        </div>
+    </div>
+    <div class="col-md-2 col-sm-2 col-xs-2">
+        <font color="red" size="1">注：不选择部门时默认通知到服务经理。</font>
+    </div>
+</div>
+<div class="row gap-top">
+    <div class="col-md-6 col-sm-6 col-xs-6">
+        <div class="input-group">
+            <span class="input-group-addon title-sm ">有效期间</span>
+            <input size="16" type="text" value="@ViewBag.CurrentDate" class="form_datetime form-control text-center datewidth"
+                   id="txtSDate" />
+            <span>~</span>
+            <input size="16" type="text" value="@ViewBag.CurrentDate" class="form_datetime form-control text-center datewidth datemargin"
+                   id="txtEDate" />
+        </div>
+    </div>
+    <div class="col-md-6 col-sm-6 col-xs-6">
+        <div class="input-group">
+            <span class="input-group-addon title-sm "><font color="red">*</font>&nbsp;通知编号</span>
+            <input type="text" class="form-control" id="input_noticeno_id" maxlength="200" readonly/>
+        </div>
+    </div>
+</div>
+<div class="row gap-top">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="input-group">
+            <span class="input-group-addon title-sm "><font color="red">*</font>&nbsp;通知内容</span>
+            <textarea class="form-control" rows="6" id="textarea_noticecontent_id" maxlength="2000"></textarea>
+        </div>
+    </div>
+</div>
+<div class="row gap-top">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div id="ossfile"></div>
+        <div id="container" class="pull-right">
+            <a id="selectfiles" href="javascript:void(0);" class='btn btn-primary'><span class="fa fa-cloud-upload gap-icon"></span>上传文件</a>
+            <a id="postfiles" href="javascript:void(0);" class='btn' style="display:none">开始上传</a>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div id="Grid" class="col-md-12 col-sm-12 col-xs-12">
+        <table id="grid" class="ui-jqgrid-htable"></table>
+        <div id="pager" class="page">
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-4 col-sm-4 col-xs-4 gap-top"></div>
+    <div class="col-md-8 col-sm-8 col-xs-8 gap-top">
+        <button type="button" class="btn btn-primary" id="btn_tempsave_id">
+            <span class="fa fa-save gap-icon"></span><span>暂存</span>
+        </button>
+        <button type="button" class="btn btn-primary" id="btn_save_id">
+            <span class="fa fa-save gap-icon"></span><span>提交</span>
+        </button>
+        <button type="button" class="btn btn-primary" id="btn_clear_id">
+            <span class="fa fa-reply gap-icon"></span><span>取消</span>
+        </button>
+    </div>
+</div>
+@section Scripts{
+    <style>
+    </style>
+    <!-- 1. Load -->
+    <script type="text/javascript">
+        var _grid, _gridName, _noticeId, _noticeStatus, _showDelBtn = false, _disList, _depList,_readerid;
+            _noticeId = Request["pamId"];
+            _noticeStatus = Request["pamStatus"];
+            console.log(_noticeStatus);
+            _disid = Request["pamDisId"];
+            _departid = Request["pamDepartId"];
+            $(document).ready(function () {
+                $(".form_datetime").datetimepicker({
+                    format: 'yyyy-mm-dd',
+                    language: 'zh-CN',
+                    minView: 2, //显示到具体日期，如果设置到1，则显示到具体时间点。
+                    autoclose: 1,
+                    todayHighlight: 1,
+                    todayBtn: 1,
+                    startView: 2, //开始页面设置为具体到日期的那个页面。
+                    pickerPosition: 'bottom-left'
+                });
+                $("#txtSDate").val("@ViewBag.CurrentDate");
+                $("#txtEDate").val("@ViewBag.CurrentDate");
+                DateFormatCheckEvent("txtSDate", { CheckType: "BLANK" });
+                DateFormatCheckEvent("txtEDate", { CheckType: "BLANK" });
+                fn_Initial();
+                fn_InitialData();
+                if (_noticeId != undefined && _noticeId != null && _noticeId != 0)
+                    fn_SearchData();
+                if (("@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]" == 'S' || "@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]" == 'D') && _noticeStatus=='U')
+                    fn_updateReadStatus();
+            });
+    </script>
+    <!-- 2. Init -->
+    <script type="text/javascript">
+        function fn_Initial() {
+            _gridName = 'grid';
+            _grid = $('#' + _gridName);
+            $('#btn_tempsave_id').on('click', function () {
+                fn_saveNotice("T");
+            });
+            $('#btn_save_id').on('click', function () {
+                fn_saveNotice("S");
+            });
+            $('#btn_clear_id').on('click', function () {
+                if (_noticeId != undefined && _noticeId != null && _noticeId != 0)
+                    fn_saveNotice("C");
+                else
+                {
+                    $('#input_noticetitle_id').val("");
+                    $("input[name=radio_noticereply_name]").first().prop("checked", true);
+                    $("#input_noticedis_id").val("");
+                    $("#input_noticedep_id").val("");
+                    $("#txtSDate").val("@ViewBag.CurrentDate");
+                    $("#txtEDate").val("@ViewBag.CurrentDate");
+                    $('#textarea_noticecontent_id').val("");
+                    _grid.jqGrid("clearGridData");
+                    
+                }
+            });
+            $('#btnChooseDis').on('click', function () {
+                var showdetail =1;
+                if (_noticeStatus != undefined && _noticeStatus != "T" && _noticeId != 0)
+                    showdetail =0;
+                $.sa.pop("/Notice/NOT011P",{
+                    params: { 'pamDisList': JSON.stringify(_disList), 'pamNoticeId': _noticeId, 'pamShowMul': showdetail, 'pamInUserId': '@Context.Request.Cookies[SessionKeys.SESSION_USERID]' }, width: 434, height: 360, title: '<span class="fa fa-hand-o-right gap-icon-right"></span><span>选择经销商</span>'
+                   , popcallback: function (data) {
+                       _disList = data;
+                       if (data != undefined && data != null && data.length > 0) {
+                           $("#input_noticedis_id").val("共选" + data.length + "项");
+                       } else {
+                           $("#input_noticedis_id").val("");
+                       }
+                   }
+                });
+            });
+            $('#btnChooseDep').on('click', function () {
+                var showdetail = 1;
+                if (_noticeStatus != undefined && _noticeStatus != "T" && _noticeId != 0)
+                    showdetail = 0;
+                $.sa.pop("/Notice/NOT012P", {
+                    params: { 'pamDepList': JSON.stringify(_depList), 'pamShowMul': showdetail},
+                    width: 434, height: 360, title: '<span class="fa fa-hand-o-right gap-icon-right"></span><span>选择部门</span>'
+                 , popcallback: function (data) {
+                     _depList = data;
+                     if (data != undefined && data != null && data.length > 0) {
+                         $("#input_noticedep_id").val("共选" + data.length + "项");
+                     } else {
+                         $("#input_noticedep_id").val("");
+                     }
+                 }
+                });
+            });
+            $("button.close").on('click', function () {
+                if (("@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]" == 'S' || "@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]" == 'D')&&_noticeStatus=="U")
+                    parent.popcallback('1');
+            });
+            if (_noticeStatus!=undefined&&_noticeStatus!="T"&&_noticeId!=0) {
+                $('#btn_tempsave_id').hide();
+                $('#btn_save_id').hide();
+                $('#btn_clear_id').hide();
+                $('#input_noticetitle_id').attr("readonly", true);
+                $("input[name=radio_noticereply_name]").attr("disabled", true);
+                $('#radio_noticereply_id').attr("readonly", true);
+                $('#txtSDate').attr("disabled", true);
+                $('#txtEDate').attr("disabled", true);
+                $('#textarea_noticecontent_id').attr("readonly", true);
+                $('#container').hide();
+                //$('#btnChooseDis').attr("disabled", true);
+                //$('#btnChooseDep').attr("disabled", true);
+                _showDelBtn = true;
+            }
+            fn_GridInit();
+        }
+    </script>
+    <!-- 3. InitData -->
+    <script type="text/javascript">
+            function fn_InitialData() {
+                $("input[name=radio_noticereply_name]").first().prop("checked", true);
+            }
+    </script>
+    <!--4. Grid Attachment-->
+    <script type="text/javascript">
+        function fn_GridInit() {
+            _grid.jqGrid({
+                datatype: 'local',
+                colModel: [
+                    {
+                        name: 'ShareUrl', label: '附件', width: 210, align: 'left',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        },
+                        formatter: fn_PreviewFile, unformat: fn_UnPreviewFile
+                    },
+                    {
+                        name: '', label: '删除', width: 30, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        },
+                        formatter: fn_DeleteFile, unformat: fn_UnDeleteFile
+                        , hidden: _showDelBtn
+                    },
+                    {
+                        name: 'Url', hidden:true
+                    },
+                    {
+                        name: 'AttachName', hidden: true
+                    }
+                ],
+                width: $('#Grid').width(),
+                //height: 'auto',
+                minHeight: 0,
+                maxHeight: 10,
+                loadonce:true,
+                rownumbers: true,
+                rownumWidth: 50,
+                rowNum: 10000,
+                //rowList: [5, 10],
+                loadui: true,
+                pginput: false,       // 페이지 입력창을 표시하는 것에 대한 속성
+                pgbuttons: false,     // 페이지 이동 버튼을 표시하는 것에 대한 속성
+                pgtext: null,
+                footerrow: false,
+                cellsubmit: 'clientArray',
+                pager: jQuery('#pager'),
+                cellEdit: true,
+                editurl: 'clientArray',
+                viewrecords: true,
+                gridComplete: function (id) {
+                    var rowNum = parseInt($(this).getGridParam("records"), 50);
+                    if (rowNum > 0) {
+                        $(".ui-jqgrid-sdiv").show();
+                    }
+                    else {
+                        $(".ui-jqgrid-sdiv").hide();
+                    }
+
+                    //fix the pager position
+                    $('#pager_left').css('width', '25%');
+                    $('#pager_right').css('width', '25%');
+
+                    $("[aria-describedby='grid_rn']").addClass("readonlycell");
+                }
+            });
+        }
+        function fn_SetGrid(mydata) {
+            mydata = mydata || [];
+            _grid.clearGridData()
+            .setGridParam({
+                data: mydata
+            }).trigger('reloadGrid');
+        }
+        ///删除按钮
+        function fn_DeleteFile(cellvalue, options, rowObject) {
+            return '<a class="btn" onclick="fn_DoDeleteFile(' + options.rowId + ')"><span class="fa fa-trash-o gap-icon  fa-lg" style="color:red"></span></a>';
+        }
+
+        function fn_UnDeleteFile(cellvalue, options, rowObject) {
+            return "";
+        }
+        function fn_DoDeleteFile(id) {
+            var ids =  $(id).attr("id");
+            if (!ids)
+                ids = id + '';
+            _grid.delRowData(ids);
+        }
+        //添加行
+        function fn_Addrow(picName,key) {
+            var ids = _grid.getDataIDs();
+            var pref = $.jgrid.uidPref;
+            var newid = 1;
+            if (ids && ids.length > 0) {
+                var regx = new RegExp(pref, 'g');
+                var nids = ids.join(',').replace(regx, '').split(',');
+                var maxid = Math.max.apply(Math, nids);
+                newid = maxid + 1;
+            }
+            newid = pref + (newid).toString();
+            var rowdata = {
+                ShareUrl:picName,
+                AttachName: picName,
+                Url: host + g_dirname + key
+            };
+            _grid.addRowData(newid, rowdata, "first");
+            $(_grid.getGridRowById(newid)).addClass("edited");
+        }
+
+        ///预览按钮
+        function fn_PreviewFile(cellvalue, options, rowObject) {
+            var previewPath = rowObject.Url;
+            @*if (rowObject.ShowUrl == undefined&&rowObject.Url!=null)
+                previewPath = '@Url.Action("DownLoadAttachment")?path=uploads'+ "/" + encodeURIComponent(rowObject.Url.substring(rowObject.Url.lastIndexOf('/') + 1)) + '';*@
+            if (rowObject.AttachName.substr(rowObject.AttachName.lastIndexOf(".")) == ".gif" || rowObject.AttachName.substr(rowObject.AttachName.lastIndexOf(".")) == ".jpg" || rowObject.AttachName.substr(rowObject.AttachName.lastIndexOf(".")) == ".png")
+                return "<a href='" + previewPath + "' data-lightbox='PreviewPicture' style='margin-left: 10px; cursor: pointer; color: #0088cc; text-decoration: underline;'>" + rowObject.AttachName + "</a>";
+            else
+            {
+                var url = '@Url.Action("DownLoadForRename", "Notice")' + "?fileName=" + encodeURIComponent(rowObject.AttachName) + "&sourcepath=" + previewPath;
+                return " <a href='" + url + "'  class='btn' download='" + rowObject.AttachName + "'>" + rowObject.AttachName + "</a>";
+            }
+        }
+
+        function fn_UnPreviewFile(cellvalue, options, rowObject) {
+            return rowObject.AttachName;
+        }
+    </script>
+    <!--6. Search-->
+    <script type="text/javascript">
+        function fn_SearchData() {
+            $.sa.get(SEARCHMADENOTICEDETAILINFO, {
+                'id': _noticeId == undefined || _noticeId == null ? 0 :_noticeId
+                        },
+                       {
+                           "success": function (data) {
+                               if (data.resultCode == 0) {
+                                       var resultDto = JSON.parse(data.body);
+                                       fn_SetGrid(resultDto.AttachList);
+                                       $('#input_noticetitle_id').val(resultDto.Title);
+                                       if (resultDto.NeedReply == 0) {
+                                           $("input[name=radio_noticereply_name]").first().prop("checked", true);
+                                       }
+                                       else if (resultDto.NeedReply == 1) {
+                                           $("input[name=radio_noticereply_name]").last().prop("checked", true);
+                                       }
+                                       else {
+                                           $("input[name=radio_noticereply_name]").first().prop("checked", false);
+                                           $("input[name=radio_noticereply_name]").last().prop("checked", false);
+                                       }
+                                       $('#input_noticeno_id').val(resultDto.NoticeNo);
+                                       $('#txtSDate').val(resultDto.SDate.substr(0,10));
+                                       $('#txtEDate').val(resultDto.EDate.substr(0,10));
+                                       $('#textarea_noticecontent_id').val(resultDto.Content);
+                                       _disList = $.map(resultDto.NoticeDisList, function (obj) { var result = obj.DisId; return result; });
+                                       _depList =resultDto.NoticeDepList;
+                                       $("#input_noticedis_id").val("共选" + resultDto.NoticeDisList.length + "项");
+                                       $("#input_noticedep_id").val("共选" + resultDto.NoticeDepList.length + "项");
+                               } else {
+                                   $.sa.alert(data.msg);
+                               }
+                           },
+                           "failure": function (data, statusText, jqXHR) {
+                               $("#callback_1_layer").html(data.msg);
+                           }
+                       }
+                       , $("body"));
+        }
+    </script>
+    <!--7. Validate Before Save-->
+    <script type="text/javascript">
+            function fn_saveValidate() {
+                var isValiA = true;
+                var isValiB = true;
+                var isValiC = true;
+                var isValiD = true;
+                var isVali = true;
+
+                if ($.trim($("#input_noticetitle_id").val()) == "")
+                        isValiA = false;
+                if ($("#txtSDate").val() > $("#txtEDate").val())
+                        isValiB = false;
+                if (_disList==undefined||_disList==null||_disList.length==0)
+                        isValiC = false;
+                if ($.trim($("#textarea_noticecontent_id").val()) == "")
+                        isValiD = false;
+
+                if (!isValiA) {
+                    $.sa.warning("请输入通知标题", {
+                        title: "警告！", fnClose: function () {
+                            $("#input_noticetitle_id").focus();
+                        }
+                    });
+                } else if (!isValiB) {
+                    $.sa.warning("结束日期不能小于开始日期", {
+                        title: "警告！", fnClose: function () {
+                            $("#txtEDate").focus();
+                        }
+                    });
+                } else if (!isValiC) {
+                    $.sa.warning("请选择通知对象", {
+                        title: "警告！", fnClose: function () {
+                            $("#input_noticedis_id").focus();
+                        }
+                    });
+                } else if (!isValiD) {
+                    $.sa.warning("请输入通知内容", {
+                        title: "警告！", fnClose: function () {
+                            $("#textarea_noticecontent_id").focus();
+                        }
+                    });
+                } 
+                isVali = isValiA & isValiB & isValiC & isValiD;
+                return isVali;
+            }
+    </script>
+    <!--8. Save-->
+    <script type="text/javascript">
+        function fn_saveNotice(saveType) {
+            var alertmsg = "是否要保存？";
+            if (saveType == "C")
+                alertmsg = "确定要取消吗？";
+            if (fn_saveValidate()) {
+                var myDialog = $.sa.confirm(alertmsg, {
+                        fnOk: function () {
+                            var noticeReader = "";
+                            if (_disList != undefined && _disList != null && _disList.length > 0) {
+                                if (_depList != undefined && _depList != null && _depList.length > 0) {
+                                    for (var x = 0; x < _disList.length; x++) {
+                                        for (var y = 0; y < _depList.length; y++) {
+                                            noticeReader =noticeReader+ _disList[x] + "|" + _depList[y].DisCode + ",";
+
+                                        }
+                                    }
+                                } else {
+                                    for (var x = 0; x < _disList.length; x++) {
+                                        noticeReader = noticeReader + _disList[x] + "|" + "0" + ",";
+                                    }
+                                }
+                            }
+                            var editData = _grid.jqGrid("getRowData");
+                            var param = {};
+                            param["Title"] = $('#input_noticetitle_id').val();
+                            param["SDate"] = $.trim($("#txtSDate").val().replace(/-/g, ""));
+                            param["EDate"] = $.trim($("#txtEDate").val().replace(/-/g, ""));
+                            param["NeedReply"] = $("[name=radio_noticereply_name]").filter(":Checked").val();
+                            param["Content"] = $('#textarea_noticecontent_id').val();
+                            param["Status"] = saveType;
+                            param["InUserId"] = '@Context.Request.Cookies[SessionKeys.SESSION_USERID]';
+                            param["NoticeId"] = _noticeId == undefined || _noticeId == null ? 0 : parseInt(_noticeId);
+                            param["NoticeReaders"] = noticeReader.substr(0,noticeReader.length-1);
+                            param["AttachList"] = editData;
+                            $.sa.post(SAVENOTICEMADE,
+                                JSON.stringify(param),
+                                     {
+                                         "success": function (data) {
+                                             if (data.resultCode == 0) {
+                                                 $.sa.alert('保存完成', { maxWidth: '400px', minWidth: '300px', showClose: false });
+                                                 myDialog.close();
+                                                 parent.popcallback('1');
+                                             } else {
+                                                 $.sa.alert(data.msg);
+                                             }
+                                         },
+                                         "failure": function (data, statusText, jqXHR) {
+                                             $("#callback_1_layer").html(data.msg);
+                                         }
+                                     }
+                                     , $("body"));
+                        }
+                    });
+                }
+            }
+    </script>
+    <!--9.UpdateReadStatus-->
+    <script type="text/javascript">
+            function fn_updateReadStatus() {
+                var param = {};
+                param["NoticeId"] = _noticeId == undefined || _noticeId == null ? 0 : _noticeId;
+                param["DisId"] = _disid == undefined || _disid == null ? 0 : _disid;
+                param["DepartId"] = _departid == undefined || _departid == null ? 0 : _departid;
+                param["InUserId"] ='@Context.Request.Cookies[SessionKeys.SESSION_USERID]';
+                $.sa.post(UPDATEREADERREADSTATUS,
+                    JSON.stringify(param),
+                            {
+                                "success": function (data) {
+                                    if (data != null) {
+                                        //parent.popcallback('1');
+                                    }
+                                },
+                                "failure": function (data, statusText, jqXHR) {
+                                    $("#callback_1_layer").html(data.msg);
+                                }
+                            }
+                            , $("body"));
+        }
+    </script>
+    <!--last reference-->
+
+
+
+
+
+}
+
+

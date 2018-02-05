@@ -1,0 +1,258 @@
+﻿@{
+    Layout = "_LayoutMenu";
+    ViewData["Title"] = "巡视进度统计";
+}
+@section Scripts{
+    <style type="text/css">
+        #txtSDate.datewidth, #txtEDate.datewidth {
+            width: 48.5%;
+        }
+
+        .datemargin {
+            margin-left: 3%;
+            margin-top: -1.4em;
+        }
+    </style>
+
+    <!-- 1. Load -->
+    <script type="text/javascript">
+        var _startDate = '@ViewBag.StartDate';
+        var _nowDate = '@ViewBag.NowDate';
+        $(document).ready(function () {
+            $('.form_datetime').datetimepicker({
+                format: "yyyy-mm-dd",
+                minView: 2,
+                autoclose: true,
+                todayBtn: true,
+                todayHighlight: 1,
+                pickerPosition: "bottom-right",
+                language: "zh-CN",
+                //endDate: _nowDate,
+                forceParse: 0
+            });
+            DateFormatCheckEvent("txtSDate");
+            DateFormatCheckEvent("txtEDate");
+            Initialize();
+            InitData();
+        });
+    </script>
+    <!-- 2. Init -->
+    <script type="text/javascript">
+        function Initialize() {
+            $("#btnSearch").on("click", function () {
+                fn_Search();
+            });
+            $("#selArea").on("change", function () {
+                fn_initZone();
+            });
+        }
+
+        function InitData() {
+            $('#txtSDate').val(_startDate);
+            $('#txtEDate').val(_nowDate);
+            fn_initArea();
+            fn_initZone();
+        }
+    </script>
+
+    <!-- 4. Custom Function -->
+    <script type="text/javascript">
+        function fn_initArea() {
+            //$.sa.get('http://localhost:6505/infi/api/v1/Statistic/GetAreaByUserId',
+                $.sa.get(GETAREABYUSERID,
+                           { UserId: '@Context.Request.Cookies[SessionKeys.SESSION_USERID]' },
+                           {
+                               "success": function (data) {
+                                   if (data != null) {
+                                       $('#selArea').html(JsonToCboList("Name", "Value", JSON.parse(data.body), { "SelectType": "ALL" }));
+                                       if ('@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]' == 'R') {
+                                           $('#selArea').attr("disabled", "disabled");
+                                           $('#selArea').val(JSON.parse(data.body)[0].Value);
+                                           fn_initZone();
+                                       }
+                                       //$.sa.warning(data.body);
+                                   }
+                               },
+                               "failure": function (data, statusText, jqXHR) {
+                                   $.sa.warning(data.msg);
+                               }
+                           });
+        }
+
+        function fn_initZone() {
+            var areaId=$("#selArea").val();
+            //$.sa.get('http://localhost:6505/infi/api/v1/Statistic/GetZoneByAreaId',
+              $.sa.get(GETZONEBYAREAID,
+                          { AreaId:areaId=="select"?"0":areaId },
+                           {
+                               "success": function (data) {
+                                   if (data != null) {
+                                       $('#selZone').html(JsonToCboList("Name", "Value", JSON.parse(data.body), { "SelectType": "ALL" }));
+                                       //$.sa.warning(data.body);
+                                   }
+                               },
+                               "failure": function (data, statusText, jqXHR) {
+                                   $.sa.warning(data.msg);
+                               }
+                           });
+        }
+        function fn_Search() {
+            var sdate = $("#txtSDate").val().replace(/\-/gi, '');
+            var edate = $("#txtEDate").val().replace(/\-/gi, '');
+            if (sdate > edate) {
+                $.sa.warning("结束时间不能在开始时间之前");
+                return;
+            }
+            var area = $("#selArea").val();
+            /*if (area == "select") {
+                $.sa.warning("请选择厂家");
+                return;
+            }*/
+            var zoneId = $("#selZone").val();
+            /*if (zoneId == "select") {
+                $.sa.warning("请选择地区");
+                return;
+            }*/
+            //$.sa.get('http://localhost:6505/infi/api/v1/Statistic/GetPatrolData',
+            $.sa.get(GETPATROLDATA,
+             { SDate: sdate, EDate: edate,Area:area,Zone:zoneId,UserId:'@Context.Request.Cookies[SessionKeys.SESSION_USERID]'},
+                      {
+                          "success": function (data) {
+                              if (data != null && JSON.parse(data.body).length > 0) {
+                                  var yData = [];
+                                  for (var j = 0; j < JSON.parse(data.body).length; j++) {
+                                      var list = new Object();
+                                      list.name = JSON.parse(data.body)[j].Title;
+                                      list.y = JSON.parse(data.body)[j].Rate;                                     
+                                      yData.push(list);
+                                  }
+                                  setHighChartsData(yData);
+                              } else {
+                                  $.sa.warning("没有查询到数据！");
+                                  setHighChartsData();
+                              }
+                          },
+                          "failure": function (data, statusText, jqXHR) {
+                              setHighChartsData();
+                              $.sa.warning(data.msg);
+                          }
+                      }, $("body"));                              
+        }
+        function setHighChartsData(yData) {
+            /*Highcharts.chart('container', {
+                chart: {
+                    type: 'line'
+                },
+                title: {
+                    text: '地区经理巡查进度表'
+                },
+                subtitle: {
+                    text: '以月为单位'
+                },
+                xAxis: {
+                    categories: xData//['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                },
+                yAxis: {
+                    title: {
+                        text: '完成率 (%)'
+                    }
+                },
+                plotOptions: {
+                    line: {
+                        dataLabels: {
+                            enabled: true
+                        },
+                        enableMouseTracking: true
+                    }
+                },
+                credits: {
+                    enabled: false// 去掉官网链接
+                },
+                series: yData
+            });*/
+
+
+            Highcharts.chart('container', {
+                chart: {
+                    type: 'column'
+                },
+                title: {
+                    text: '地区经理巡查进度表'
+                },               
+                credits: {
+                    enabled: false// 去掉官网链接
+                },
+                xAxis: {
+                    type: 'category'
+                },
+                yAxis: {
+                    title: {
+                        text: '完成率 (%)'
+                    }
+
+                },
+                colors: ['#7cb5ec','#90ed7d', '#f7a35c', '#8085e9', '#f15c80', '#e4d354', '#8085e8', '#8d4653', '#91e8e1'] ,
+                legend: {
+                    enabled: false
+                },
+                plotOptions: {
+                    series: {
+                        borderWidth: 0,
+                        dataLabels: {
+                            enabled: true,
+                            format: '{point.y:.2f}%'
+                        }
+                    }
+                },
+
+                tooltip: {
+                    headerFormat: '',
+                    pointFormat: '<span style="color:{point.color}">{point.name}</span>: <b>{point.y:.2f}%</b>'
+                },
+
+                series: [{
+                    //name: 'Brands',
+                    colorByPoint: true,
+                    data: yData
+                }]            
+            });
+        }
+    </script>
+}
+<div class="">
+    <div class="row" style="margin-top:10px;">
+        <div class="col-md-12">
+            <span class="fa fa-flag fa-lg gap-icon"></span><span class="page-mtitle">统计分析</span><span>&nbsp;>&nbsp;</span><span class="page-title">巡视进度统计</span>
+            <div class="pull-right">
+                <button id="btnSearch" class="btn btn-primary">
+                    <span class="fa fa-search gap-icon"></span>查询
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="row" style="margin-top:10px;">
+        <div class="col-md-4 col-sm-6">
+            <div class="input-group">
+                <span class="input-group-addon title-sm">期间</span>
+                <input size="16" type="text" value="" class="form_datetime form-control text-center datewidth"
+                       id="txtSDate" />
+                <span>~</span>
+                <input size="16" type="text" value="" class="form_datetime form-control text-center datewidth datemargin"
+                       id="txtEDate" />
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="input-group">
+                <span class="input-group-addon title-sm">厂家</span>
+                <select class="form-control" id="selArea"></select>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="input-group">
+                <span class="input-group-addon title-sm">地区</span>
+                <select class="form-control" id="selZone"></select>
+            </div>
+        </div>
+    </div>
+    <div id="container" style="min-width: 310px; height: 400px; margin: 0 auto; margin-top:50px;"></div>
+</div>

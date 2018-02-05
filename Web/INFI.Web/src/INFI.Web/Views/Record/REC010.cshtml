@@ -1,0 +1,653 @@
+﻿@{
+    Layout = "_LayoutMenu";
+    ViewData["Title"] = "报备管理";
+}
+@section HeadCss{
+    <style>
+        #txtSDate.datewidth, #txtEDate.datewidth {
+            width: 48.5%;
+        }
+
+        .datemargin {
+            margin-left: 3%;
+            margin-top: -1.4em;
+        }
+
+        .gap-icon {
+            margin-right: 5px;
+        }
+
+        .jqgridbuttonwidth {
+            width: 90%;
+        }
+
+        .decoration {
+            background-image: url('/images/x.gif');
+            background-repeat: no-repeat;
+            font-style: italic;
+            background-size: 100% 100%;
+        }
+
+        .dotdotdot {
+            display: inline-block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 260px;
+            line-height: 20px;
+        }
+    </style>
+}
+@section Scripts{
+
+    <!-- 1. Load -->
+    <script type="text/javascript">
+        var _grid, _gridName;
+        var _userType = "@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]";
+        var _data;
+        $(document).ready(function () {
+            fn_Initial();
+            fn_GridInit();
+            fn_InitialData();
+            fn_SetButtonStatus();
+        });
+    </script>
+    <!-- 2. Init -->
+    <script type="text/javascript">
+        function fn_Initial() {
+            _gridName = 'grid';
+            _grid = $('#' + _gridName);
+            $(".form_datetime").datetimepicker({
+                format: 'yyyy-mm-dd',
+                language: 'zh-CN',
+                minView: 2, //显示到具体日期，如果设置到1，则显示到具体时间点。
+                autoclose: 1,
+                todayHighlight: 1,
+                todayBtn: 1,
+                startView: 2, //开始页面设置为具体到日期的那个页面。
+                pickerPosition: 'bottom-left'
+            });
+            $("#txtSDate").val("@ViewBag.FirstDay");
+            $("#txtEDate").val("@ViewBag.CurrentDate");
+            DateFormatCheckEvent("txtSDate", { CheckType: "BLANK" });
+            DateFormatCheckEvent("txtEDate", { CheckType: "BLANK" });
+
+            $('#btnSearch').on('click', function () {
+                if (fn_SearchChk()) {
+                    fn_Search();
+                }
+
+            });
+
+            $("#btnRegist").on("click", function () {
+                fn_OpenPop("0", "C");
+            });
+
+            $("#btnExcelDownLoad").on("click", function () {
+                fn_downLoad();
+            });
+
+        }
+    </script>
+    <!-- 3. InitData -->
+    <script type="text/javascript">
+        function fn_InitialData() {
+            $.sa.get(TASKGETSTATUS, { GroupCode: '17' },
+                {
+                    "success": function (data) {
+                        $("#selRecordType").html(JsonToCboList("Name", "Value", JSON.parse(data.body), { 'SelectType': 'ALL' }));
+                    },
+                    "failure": function (data, statusText, jqXHR) {
+
+                    }
+                }
+                , $(".Grid")
+                , { type: "spin" });
+
+            $.sa.get(TASKGETSTATUS, { GroupCode: '18' },
+                {
+                    "success": function (data) {
+                        $("#select_approal_id").html(JsonToCboList("Name", "Value", JSON.parse(data.body), { 'SelectType': 'ALL' }));
+                    },
+                    "failure": function (data, statusText, jqXHR) {
+
+                    }
+                }
+                , $(".Grid")
+                , { type: "spin" });
+
+            $.sa.get(SEARCHNOTIFIDIS, { UserId: '@Context.Request.Cookies[SessionKeys.SESSION_USERID]' },
+                             {
+                                 "success": function (data) {
+                                     $("#select_distributor_id").html(JsonToCboList("DisName", "DisId", eval(data.body), { 'SelectType': 'ALL' }));
+
+                                 },
+                                 "failure": function (data, statusText, jqXHR) {
+                                     $("#callback_1_layer").html(data.msg);
+                                 }
+                             }
+                             , $(".Grid")
+                             , { type: "spin" });
+        }
+    </script>
+
+    <!-- 4. Custom Function -->
+    <script type="text/javascript">
+
+        function fn_SetButtonStatus() {
+            //英菲尼迪平台“报备模块”，请在节后第一时间关闭经销商填写的权限，仅供经销商查看。Apply by ZhaoJingjing and  modify by DongLimin 2017-10-9 8:50:16
+            @*var userType = '@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]';
+            if (userType == "S") {
+                $("#btnRegist").removeClass("hidden");
+            } else {*@
+                $("#btnRegist").addClass("hidden");
+            //}
+        }
+        function fn_SearchChk() {
+            if ($("#txtSDate").val() > $("#txtEDate").val()) {
+                $.sa.warning("结束日期不能小于开始日期"
+                , {
+                    fnClose: function () {
+                        $("#txtEDate").focus();
+                        return false;
+                    }
+                });
+            } else {
+                return true;
+            }
+        }
+
+        function fn_Search() {
+            var sdate = $("#txtSDate").val().replace(/\-/gi, '');
+            var edate = $("#txtEDate").val().replace(/\-/gi, '');
+            var disId = $("#select_distributor_id").val();
+            //$.sa.get('http://localhost:6505/infi/api/v1/Record/GetRecordInfoList',
+            $.sa.get(GETRECORDINFOLIST,
+                          {
+                              recordSDate: sdate, recordEDate: edate, userId: '@Context.Request.Cookies[SessionKeys.SESSION_USERID]', DisId: disId
+                              , approvalStatus: $("#select_approal_id").val(), recordType: $("#selRecordType").val()
+                          },
+                          {
+                              "success": function (data) {
+                                  if (data != null && JSON.parse(data.body).length > 0) {
+                                      _data = JSON.parse(data.body);
+                                      fn_SetGrid(JSON.parse(data.body));
+                                  } else {
+                                      $.sa.alert("没有查询到数据！");
+                                      _data = [];
+                                      fn_SetGrid([]);
+                                  }
+                              },
+                              "failure": function (data, statusText, jqXHR) {
+                                  fn_SetGrid("");
+                                  $.sa.warning(data.msg);
+                              }
+                          }, $("body"));
+        }
+
+        function fn_OpenDetail(cellvalue, options, rowObject) {
+            return '<button type="button" class="btn btn-primary start"  onclick="fn_OpenPop(' + rowObject.RId + ',\'' + rowObject.ApproalStatusCode + '\')">详情</button>';
+        }
+        function fn_UnOpenDetail() {
+            return "";
+        }
+
+        function fn_OpenPop(rId, approalStatusCode) {
+            var title = '<span class="fa fa-hand-o-right gap-icon-right"></span><span>报备详情</span>';
+            if (rId == "0") {
+                title = '<span class="fa fa-hand-o-right gap-icon-right"></span><span>报备登记</span>';
+            } else if ((_userType == "A" || _userType == "R") && approalStatusCode == "C") {
+                title = '<span class="fa fa-hand-o-right gap-icon-right"></span><span>报备批复</span>';
+            }
+            $.sa.pop('/Record/REC010P', {
+                height: 500, width: 850, title: title,
+                params: {
+                    RId: rId
+                    , ApproalStatusCode: approalStatusCode
+                }
+                    , popcallback: function (msg) {
+                        fn_Search();
+                    }
+            });
+        }
+
+    </script>
+    <!--5.Grid-->
+    <script type="text/javascript">
+        function fn_GridInit() {
+            _grid.jqGrid({
+                datatype: 'local',
+                colModel: [
+
+                    {
+                        name: 'RecordTitle', label: '报告标题', width: 80, align: 'left'
+                        , cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    }
+                    ,
+                    {
+                        name: 'RecordType', label: '报备类型', width: 40, align: 'center', cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'RecordDatetime', label: '报备时间', width: 70, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'DisName', label: '经销商', width: 80, align: 'left',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'ApproalStatus', label: '审核状态', width: 40, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'ApprovalDateTime', label: '审核时间', width: 70, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'DownloadCnt', label: '详情', width: 30, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }, formatter: fn_OpenDetail, unformat: fn_UnOpenDetail
+                    },
+                    {
+                        name: 'RId', label: 'RId', width: 40, align: 'center', hidden: true
+
+                    }, {
+                        name: 'ApproalStatusCode', label: 'ApproalStatusCode', width: 40, align: 'center', hidden: true
+                    }, {
+                        name: 'RecordReason', label: 'RecordReason', width: 40, align: 'center', hidden: true
+                    }
+                    , {
+                        name: 'ApprovalRemark', label: 'ApprovalRemark', width: 40, align: 'center', hidden: true
+                    }
+                ],
+                width: $('#Grid').width(),
+                height: 'auto',
+                rownumbers: true,
+                rownumWidth: 50,
+                rowNum: 15,
+                rowList: [15, 30, 45],
+                footerrow: false,
+                cellsubmit: 'clientArray',
+                pager: jQuery('#pager'),
+                cellEdit: true,
+                editurl: 'clientArray',
+                viewrecords: true,
+                multiselect: true,
+                afterInsertRow: function (rowid, r) {
+                },
+                gridComplete: function (id) {
+                    var rowNum = parseInt($(this).getGridParam("records"), 50);
+                    if (rowNum > 0) {
+                        $(".ui-jqgrid-sdiv").show();
+                    }
+                    else {
+                        $(".ui-jqgrid-sdiv").hide();
+                    }
+                    $('#pager_left').css('width', '25%');
+                    $('#pager_right').css('width', '25%');
+
+                    $("[aria-describedby='grid_rn']").addClass("readonlycell");
+                }
+                , onCellSelect: function (rowid, iCol, cellcontent, e) {
+                    var userType = '@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]';
+                    if (userType == "A" || userType == "R") {
+                        $("#grid").setColProp('Code', { 'editable': true });
+                    } else {
+                        $("#grid").setColProp('Code', { 'editable': false });
+                    }
+                },
+                afterInsertRow: function (rowid, r) {
+                    var userType = '@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]';
+                    var $t = $(this);
+                    if (userType == "A" || userType == "R") {
+                        $t.find('#' + rowid).find("[aria-describedby='grid_Code']").removeClass("readonlycell");
+                    } else {
+                        $t.find('#' + rowid).find("[aria-describedby='grid_Code']").addClass("readonlycell");
+                    }
+
+                }
+            });
+        }
+        function fn_SetGrid(mydata) {
+            mydata = mydata || [];
+            _grid.clearGridData()
+            .setGridParam({
+                data: mydata
+            }).trigger('reloadGrid');
+        }
+        function fn_SaveCell() {
+            var $t = $(this);
+            var $ecs = $(".edit-cell", $t);
+            $ecs.each(function (idx, ec) {
+                var iRow = $(ec).parent().index();
+                var iCol = $(ec).index();
+                $t.saveCell(iRow, iCol);
+            });
+        }
+    </script>
+    <!--Excel 下载-->
+    <script src="../js/excel/FileSaver.js"></script>
+    <script src="../js/excel/jszip.min.js"></script>
+    <script src="../js/excel/xlsx.js"></script>
+    <script>
+        function fn_downLoad() {
+            if (_data == undefined) {
+                $.sa.warning("请先查询数据，再下载！");
+                return;
+            } else if (_data.length == 0) {
+                $.sa.warning("没有可下载的数据！");
+                return;
+            }
+
+            var ids = $('#grid').jqGrid('getGridParam', 'selarrrow');
+            var selectData = [];
+            for (var i = 0; i < ids.length; i++) {
+                selectData.push($('#grid').getRowData(ids[i]));
+            }
+
+            var file = new xlsx.File();
+            var sheet = file.addSheet('Report');
+            sheet.setShowGridLine(false);
+            sheet.setColWidth(0, 2, 4);
+            sheet.setColWidth(2, 3, 6);
+            sheet.setColWidth(3, 4, 9);
+            sheet.setColWidth(4, 6, 4);
+            sheet.setColWidth(6, 7, 9);
+            sheet.setColWidth(7, 8, 4);
+            sheet.setColWidth(8, 9, 9);
+            sheet.setColWidth(9, 10, 9);
+
+            var tr = sheet.addRow();
+            tr.setHeightCM(1.2);
+            tr
+
+            for (var p = 0; p < 9; p++) {
+                var tc = tr.addCell();
+                if (p == 0) {
+                    tc.value = "报备信息";
+                    tc.hMerge = 9;
+                    tc.style.align.v = 'center';
+                    tc.style.align.h = 'center';
+                    border(tc, 1, 1, 1, 1);
+                    fill(tc, 4)
+                    font(tc, 12, "Microsoft YaHei", true);
+                }
+            }
+
+            var header1 = sheet.addRow();
+            var hrow1 = ['查询期间', $("#txtSDate").val() + "~" + $("#txtEDate").val(), '', '报备类型', $("#selRecordType option:selected").text(), '', '经销商', $("#select_distributor_id option:selected").text(), '', ''];
+
+            for (var y = 0; y < hrow1.length; y++) {
+                var hc = header1.addCell();
+                hc.style.align.v = 'center';
+                hc.style.align.h = 'center';
+                hc.style.font.color = '#555555';
+                border(hc, 1, 1, 1, 1);
+                font(hc);
+                if (y == 1 || y == 4) {
+                    hc.hMerge = 1;
+                    hc.value = hrow1[y];
+                } else if (y == 7) {
+                    hc.hMerge = 2;
+                    hc.value = hrow1[y];
+                } else if (y == 0 || y == 3 || y == 6) {
+                    hc.value = hrow1[y];
+                    fill(hc, 4)
+                }
+            }
+
+            var header2 = sheet.addRow();
+            var hrow2 = ['审核状态', $("#select_approal_id option:selected").text(), '', '', '', '', '', '', ''];
+
+            for (var y = 0; y < hrow2.length; y++) {
+                var hc = header2.addCell();
+                hc.style.align.v = 'center';
+                hc.style.align.h = 'center';
+                hc.style.font.color = '#555555';
+                border(hc, 1, 1, 1, 1);
+                font(hc);
+                if (y == 1) {
+                    hc.hMerge = 8;
+                    hc.value = hrow2[y];
+                } else if (y == 0) {
+                    hc.value = hrow2[y];
+                    fill(hc, 4)
+                }
+            }
+
+            sheet.addRow();
+
+            var title = sheet.addRow();
+            var hTitle = ['报告标题', '', '报备类型', '报备时间', '经销商', '', '报备原因', '审核状态', '审核时间', '备注'];
+            for (var y = 0; y < hTitle.length; y++) {
+                var hc = title.addCell();
+                hc.style.align.v = 'center';
+                hc.style.align.h = 'center';
+                hc.style.font.color = '#555555';
+                border(hc, 1, 1, 1, 1);
+                font(hc);
+                if (y == 0 || y == 4) {
+                    hc.hMerge = 1;
+                    hc.value = hTitle[y];
+                    fill(hc, 4)
+                } else if (y == 2 || y == 3 || y == 5 || y == 6 || y == 7 || y == 8 || y == 9) {
+                    hc.value = hTitle[y];
+                    fill(hc, 4)
+                }
+            }
+
+            // 如果没有勾选就下载全部数据，勾选的就下载勾选的数据
+            if (ids.length != 0) {
+                drawRow(selectData);
+            } else {
+                drawRow(_data);
+            }
+
+            function drawRow(data) {
+                for (var i = 0; i < data.length; i++) {
+                    var row = sheet.addRow();
+
+                    var cell0 = row.addCell();
+                    border(cell0, 1, 1, 1, 1);
+                    cell0.value = data[i].RecordTitle;
+                    cell0.style.align.wrapText = true;
+                    cell0.style.align.v = 'top';
+                    cell0.style.align.h = 'left';
+                    font(cell0);
+
+                    var cell = row.addCell();
+                    border(cell, 1, 1, 1, 1);
+                    fill(cell, 4);
+
+                    cell0.hMerge = 1;
+
+                    var cell1 = row.addCell();
+                    border(cell1, 1, 1, 1, 1);
+                    cell1.value = data[i].RecordType;
+                    cell1.style.align.v = 'top';
+                    cell1.style.align.h = 'center';
+                    font(cell1);
+
+                    var cell2 = row.addCell();
+                    border(cell2, 1, 1, 1, 1);
+                    cell2.value = data[i].RecordDatetime;
+                    cell2.style.align.v = 'top';
+                    cell2.style.align.h = 'center';
+                    font(cell2);
+
+                    var cell3 = row.addCell();
+                    border(cell3, 1, 1, 1, 1);
+                    cell3.value = data[i].DisName;
+                    cell3.style.align.wrapText = true;
+                    cell3.style.align.v = 'top';
+                    cell3.style.align.h = 'left';
+                    font(cell3);
+
+                    var cell = row.addCell();
+                    border(cell, 1, 1, 1, 1);
+                    fill(cell, 4);
+
+                    cell3.hMerge = 1;
+
+                    var cell4 = row.addCell();
+                    border(cell4, 1, 1, 1, 1);
+                    cell4.value = data[i].RecordReason;
+                    cell4.style.align.wrapText = true;
+                    cell4.style.align.v = 'top';
+                    cell4.style.align.h = 'left';
+                    font(cell4);
+
+                    var cell5 = row.addCell();
+                    border(cell5, 1, 1, 1, 1);
+                    cell5.value = data[i].ApproalStatus;
+                    cell5.style.align.v = 'top';
+                    cell5.style.align.h = 'center';
+                    font(cell5);
+
+                    var cell6 = row.addCell();
+                    border(cell6, 1, 1, 1, 1);
+                    cell6.value = data[i].ApprovalDateTime;
+                    cell6.style.align.v = 'top';
+                    cell6.style.align.h = 'center';
+                    font(cell6);
+
+                    var cell7 = row.addCell();
+                    border(cell7, 1, 1, 1, 1);
+                    cell7.value = data[i].ApprovalRemark;
+                    cell7.style.align.wrapText = true;
+                    cell7.style.align.v = 'top';
+                    cell7.style.align.h = 'left';
+                    font(cell7);
+                }
+            }
+
+
+
+            file
+              .saveAs('blob')
+              .then(function (content) {
+                  saveAs(content, "报备信息.xlsx");
+              });
+
+        }
+        function border(cell, top, left, bottom, right) {
+            //var light = 'ffded9d4';
+            var light = 'ffffffff';
+            var dark = 'ff7e6a54';
+            cell.style.border.top = 'thin';
+            cell.style.border.topColor = top ? dark : light;
+            cell.style.border.left = 'thin';
+            cell.style.border.leftColor = left ? dark : light;
+            cell.style.border.bottom = 'thin';
+            cell.style.border.bottomColor = bottom ? dark : light;
+            cell.style.border.right = 'thin';
+            cell.style.border.rightColor = right ? dark : light;
+        }
+
+        function fill(cell, type) {
+            type = type || 0;
+            var colors = ['ffffffff', 'ffa2917d', 'ffe4e2de', 'fffff8df', '74a3d2'];
+            // 1: header, 2: first col, 3: second col, 4: gray, 0: white
+            cell.style.fill.patternType = 'solid';
+            cell.style.fill.fgColor = colors[type];
+            cell.style.fill.bgColor = 'ffffffff';
+        }
+        function font(cell, fontsize, fontfamily, bold, underline) {
+            fontsize = fontsize || 6;
+            fontfamily = fontfamily || "Microsoft YaHei";
+            bold = bold || false;
+            underline = underline || false;
+            cell.style.font.size = fontsize;
+            cell.style.font.name = fontfamily;
+            cell.style.font.bold = bold;
+            cell.style.font.underline = underline;
+        }
+
+
+    </script>
+}
+<div class="modal" style="display:none;" id="modal-container-loadbar">
+    <div id="loadBar">
+
+    </div>
+</div>
+<div class="row gap-top">
+    <div class="col-md-12">
+        <span class="fa fa-flag fa-lg gap-icon"></span><span class="page-mtitle">报备管理</span><span>&nbsp;>&nbsp;</span>
+        <span class="page-title">报备管理</span>
+        <div class="pull-right">
+            <button class="btn btn-primary" id="btnSearch">
+                <span class="fa fa-search gap-icon"></span>查询
+            </button>
+            <button class="btn btn-primary hidden" id="btnRegist">
+                <span class="fa fa-plus gap-icon"></span>登记
+            </button>
+            <button class="btn btn-primary" id="btnExcelDownLoad">
+                <span class="fa fa-file-excel-o gap-icon"></span>下载
+            </button>
+        </div>
+    </div>
+</div>
+<div class="row gap-top">
+    <div class="col-md-4 col-sm-6">
+        <div class="input-group">
+            <span class="input-group-addon title-sm ">查询期间</span>
+            <input size="16" type="text" value="@ViewBag.FirstDay" class="form_datetime form-control text-center datewidth"
+                   id="txtSDate" />
+            <span>~</span>
+            <input size="16" type="text" value="@ViewBag.CurrentDate" class="form_datetime form-control text-center datewidth datemargin"
+                   id="txtEDate" />
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="input-group">
+            <span class="input-group-addon title-sm">报备类型</span>
+            <select class="form-control readonly" id="selRecordType"></select>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="input-group" id="distributor_id">
+            <span class="input-group-addon title-sm">经销商</span>
+            <select class="form-control" id="select_distributor_id"></select>
+        </div>
+    </div>
+</div>
+
+<div class="row gap-top">
+    <div class="col-md-4">
+        <div class="input-group">
+            <span class="input-group-addon title-sm">审核状态</span>
+            <select class="form-control" id="select_approal_id"></select>
+        </div>
+    </div>
+</div>
+<div class="row gap-top">
+</div>
+<div class="row gap-top">
+    <div class="col-md-12">
+        <p>注：2017年CEE下半年审核报备邮件截止至2017年9月30日，逾期将不予受理</p>
+    </div>
+</div>
+<div class="row" id="divgrid">
+    <div id="Grid" class="col-md-12">
+        <table id="grid" class="ui-jqgrid-htable"></table>
+        <div id="pager" class="page">
+        </div>
+    </div>
+</div>
+
+
+

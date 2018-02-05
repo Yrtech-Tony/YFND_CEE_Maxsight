@@ -1,0 +1,24 @@
+﻿@{
+    ViewData["Title"] = "Http400";
+    Layout = "_LayoutOfPop";
+}
+<div class="container-fluid  body-content" style="position: fixed; top: 35%; width: 100%; z-index: 97;">
+    <div class="row">
+        <div class="col-md-offset-4 col-md-8">
+            <dl class="dl-horizontal">
+                <dt><i class="fa fa-times fa-4x  text-danger"></i></dt>
+                <dd><h3>抱歉，您没有权限访问此页面，请重新登陆。</h3></dd>
+                <dt></dt>
+                <dd>
+                    <h5>
+                        @*请检查输入的网址是否正确.*@
+                        <br />
+                        <br />
+                        <a class="btn btn-warning" href='@Url.Action("Login", "Account")'><span>返回登陆</span></a>
+                    </h5>
+                </dd>
+            </dl>
+        </div>
+
+    </div>
+</div>

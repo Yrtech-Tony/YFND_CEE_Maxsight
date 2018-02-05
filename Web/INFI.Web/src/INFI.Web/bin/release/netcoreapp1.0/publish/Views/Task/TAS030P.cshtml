@@ -1,0 +1,509 @@
+﻿@{
+    Layout = "_LayoutOfPop";
+    ViewData["Title"] = "计划任务详细";
+}
+@section Scripts{
+    <style type="text/css">
+        #txtReason {
+            height: 150px;
+            max-height: 150px;
+            max-width: 600px;
+        }
+
+        .text-left {
+            max-width: 100%;
+        }
+    </style>
+
+    <!-- 1. Load -->
+    <script type="text/javascript">
+        var _nowDate = '@ViewBag.NowDate';
+        $(document).ready(function () {
+            $('.form_datetime').datetimepicker({
+                format: "yyyy-mm-dd",
+                minView: 2,
+                autoclose: true,
+                todayBtn: true,
+                todayHighlight: 1,
+                pickerPosition: "bottom-right",
+                language: "zh-CN",
+                //endDate: _nowDate,
+                forceParse: 0
+            });
+            DateFormatCheckEvent("txtVisitDateTime");
+            Initialize();
+            InitData();
+        });
+    </script>
+    <!-- 2. Init -->
+    <script type="text/javascript">
+        function Initialize() {
+            fn_GridInit();
+            var width = $("div.ui-jqgrid-bdiv").width();
+            $("div.ui-jqgrid-sdiv").css("width", width);
+            $("#txtDisName").on("click", function () {
+                fn_ChooseDistributor();
+            });
+            $("#btnStaTask").on("click", function () {
+                fn_OpenPopStaCard();
+            });
+            $("#btnCusTask").on("click", function () {
+                fn_addStaCardRow("");
+            });
+            $("#btnSub").on("click", function () {
+                fn_SaveTaskPlan("S");
+            });
+            $("#btnTem").on("click", function () {
+                fn_SaveTaskPlan("T");
+            });
+            $("#btnClose").on("click", function () {
+                fn_ClosePlanById();
+            });      
+            if ('@ViewBag.PStatus' != "S") { 
+                $("#btnYes").attr("disabled", "disabled");
+                $("#btnNo").attr("disabled", "disabled"); 
+                $("#txtReason").attr("disabled", "disabled");
+            }
+        }
+
+        function InitData() {
+            $('#txtVisitDateTime').val(_nowDate);
+            fn_initStatus();
+            fn_getPlanDtl('@ViewBag.PId');
+        }
+    </script>
+    <!-- 3. Validate -->
+    <script type="text/javascript">
+        function Validate() {
+            var disCode = $("#txtDisCode").val();
+            var visitDateTime = $("#txtVisitDateTime").val();
+            var selType = $("#selType").val();
+            var title = $("#txtTitle").val();
+            var validate = true;
+            if (disCode == "" || disCode == null) {
+                $.sa.warning("请输入经销商。");
+                validate = false;
+            } else if (visitDateTime == "" || visitDateTime == null) {
+                $.sa.warning("请输入拜访日期。");
+                validate = false;
+            } else if (selType == "select") {
+                $.sa.warning("请输入拜访类型。");
+                validate = false;
+            } else if (title == "" || title == null) {
+                $.sa.warning("请输入标题。");
+                validate = false;
+            } else {
+                validate = true;
+            }
+            return validate;
+        }
+    </script>
+    <!-- 4. Custom Function -->
+    <script type="text/javascript">
+        function fn_initStatus() {
+            //$.sa.get('http://infiqaapi.elandcloud.com/infi/api/v1/PlanTask/GetStatus',
+            $.sa.get(TASKGETSTATUS,
+                           { GroupCode: '09' },
+                           {
+                               "success": function (data) {
+                                   if (data != null) {
+                                       $('#selType').html(JsonToCboList("Name", "Value", JSON.parse(data.body), { "SelectType": "SELECT" }));
+                                       //$.sa.warning(data.body);
+                                   }
+                               },
+                               "failure": function (data, statusText, jqXHR) {
+                                   $.sa.warning(data.msg);
+                               }
+                           });
+        }
+        function fn_ChooseDistributor() {
+            $.sa.pop('/Task/TAS010P', {
+                height: 400, width: 800, title: '<span class="fa fa-hand-o-right gap-icon-right"></span><span>经销商列表</span>',
+                params: {
+                    ProductCode: $("#txtDisCode").val(),
+                    ProductName: $("#txtDisName").val()
+                }
+          , popcallback: function (msg) {
+              if (msg != null && msg.length > 0) {
+                  $("#txtDisCode").val(msg[0].Value);
+                  $("#txtDisName").val(msg[0].Name);
+              }
+          }
+            });
+        }
+        function fn_OpenPopStaCard() {
+            $.sa.pop('/Task/TAS020P', {
+                height: 400, width: 900, title: '<span class="fa fa-hand-o-right gap-icon-right"></span><span>标准任务卡</span>',
+                params: {}
+                  , popcallback: function (msg) {
+                      if (msg != null && msg.length > 0) {
+                          for (var i = 0; i < msg.length; i++) {
+                              fn_addStaCardRow(msg[i]);
+                          }
+                      }
+                  }
+            });
+        }
+        function fn_addStaCardRow(obj) {
+            var ids = $("#gridPlans").getDataIDs();
+            var pref = $.jgrid.uidPref;
+            var newid = 1;
+            if (ids && ids.length > 0) {
+                var regx = new RegExp(pref, 'g');
+                var nids = ids.join(',').replace(regx, '').split(',');
+                var maxid = Math.max.apply(Math, nids);
+                newid = maxid + 1;
+            }
+            newid = pref + (newid).toString();
+            var rowdata;
+            if (obj != "") {
+                rowdata = {
+                    SeqNo: maxid + 1,
+                    TPTitle: obj.TCTitle,
+                    TPDescription: obj.TCDescription,
+                    UserName: obj.UserName,
+                    InDateTime: obj.InDateTime,
+                    Delete: '',
+                    TCId: obj.Id,
+                    TPId: '',
+                    InUserId: obj.InUserId
+                };
+            } else {
+                rowdata = {
+                    SeqNo: maxid + 1,
+                    TPTitle: '',
+                    TPDescription: '',
+                    UserName: '',
+                    InDateTime: _nowDate,
+                    Delete: '',
+                    TCId: '',
+                    TPId: '',
+                    InUserId: ''
+                };
+
+            }
+
+            $("#gridPlans").addRowData(newid, rowdata, 'last');
+            $($("#gridPlans").getGridRowById(newid)).addClass("edited");
+        }
+        function fn_DeleteTaskPlan(obj) {
+            fn_saveCell.call($("#gridPlans"));
+            var rowData = $("#gridPlans").jqGrid("getRowData", obj)
+            if (rowData.TPId == null || rowData.TPId == "" || rowData.TPId == undefined) {
+                $("#gridPlans").delRowData(obj);
+            } else {
+                fn_DeleteTaskOfPlan(rowData.TPId);
+            }
+        }
+        function fn_SaveTaskPlan(type) {
+            fn_saveCell.call($("#gridPlans"));
+            var disCode = $("#txtDisCode").val();
+            var visitDateTime = $("#txtVisitDateTime").val();
+            var selType = $("#selType").val();
+            var title = $("#txtTitle").val();
+            var arr = [];
+            if (Validate()) {
+                var ids = $("#gridPlans").getDataIDs();
+                if (ids && ids.length > 0) {
+                    for (var i = 0; i < ids.length; i++) {
+                        arr.push($("#gridPlans").jqGrid("getRowData", ids[i]));
+                    }
+                }
+                var item = { PId: '@ViewBag.PId', Title: title, DistributorId: disCode, VisitDateTime: visitDateTime, VisitType: selType, PStatus: type, InUserId: '@Context.Request.Cookies[SessionKeys.SESSION_USERID]', XmlData: arr };
+                //$.sa.post('http://infiqaapi.elandcloud.com/infi/api/v1/PlanTask/AddorUpdatePlans',
+                $.sa.post(TASKADDORUPDATEPLANS,
+                         JSON.stringify(item),
+                         {
+                             "success": function (data) {
+                                 if (data != null && data.msg == "") {
+                                     $.sa.warning("保存成功！");
+                                     var list = "S";
+                                     window.parent.popcallback(list);
+                                 } else {
+                                     $.sa.warning("保存失败！");
+                                     //fn_SetGrid("");
+                                 }
+                             },
+                             "failure": function (data, statusText, jqXHR) {
+                                 //fn_SetGrid("");
+                                 $.sa.warning(data.msg);
+                             }
+                         }, $("body"));
+            }
+        }
+        function fn_saveCell() {
+            var $t = $(this);
+            var $ecs = $(".edit-cell", $t);
+            $ecs.each(function (idx, ec) {
+                var iRow = $(ec).parent().index();
+                var iCol = $(ec).index();
+                $t.saveCell(iRow, iCol);
+            });
+        }
+        function fn_getPlanDtl(Pid) {
+            // $.sa.get('http://infiqaapi.elandcloud.com/infi/api/v1/PlanTask/GetPlansDtlList',
+            $.sa.get(TASKGETPLANSDTLLIST,
+                          { Id: Pid },
+                          {
+                              "success": function (data) {
+                                  if (data != null) {
+                                      //$('#selType').html(JsonToCboList("Name", "Value", JSON.parse(data.body), { "SelectType": "SELECT" }));
+                                      //$.sa.warning(data.body);
+                                      fn_SetGrid(JSON.parse(data.body));
+                                      $("#txtDisName").val(JSON.parse(data.body)[0].Name);
+                                      $("#txtDisCode").val(JSON.parse(data.body)[0].Code);
+                                      $("#txtTitle").val(JSON.parse(data.body)[0].Title);
+                                      $("#txtVisitDateTime").val(JSON.parse(data.body)[0].VisitDateTime);
+                                      $("#selType").val(JSON.parse(data.body)[0].VisitType);
+                                      $("#txtReason").val(JSON.parse(data.body)[0].RejectReason);
+                                  }
+                              },
+                              "failure": function (data, statusText, jqXHR) {
+                                  $.sa.warning(data.msg);
+                              }
+                          }, $("body"));
+        }
+        function fn_DeleteTaskOfPlan(obj) {
+            var item = { Id: obj }
+            //$.sa.post('http://infiqaapi.elandcloud.com/infi/api/v1/PlanTask/DeleteTaskOfPlans',
+            $.sa.post(TASKDELETETASKOFPLANS,
+                        JSON.stringify(item),
+                        {
+                            "success": function (data) {
+                                if (data != null && data.msg == "") {
+                                    $.sa.warning("保存成功！");
+                                    fn_getPlanDtl('@ViewBag.PId');
+                                } else {
+                                    $.sa.warning("保存失败！");
+                                    //fn_SetGrid("");
+                                }
+                            },
+                            "failure": function (data, statusText, jqXHR) {
+                                //fn_SetGrid("");
+                                $.sa.warning(data.msg);
+                            }
+                        }, $("body"));
+        }
+        function fn_ClosePlanById() {
+            var item = { Id: '@ViewBag.PId' }
+            //$.sa.post('http://infiqaapi.elandcloud.com/infi/api/v1/PlanTask/ClosePlanById',
+            $.sa.post(TASKCLOSEPLANBYID,
+                        JSON.stringify(item),
+                        {
+                            "success": function (data) {
+                                if (data != null && data.msg == "") {
+                                    var list = "S";
+                                    window.parent.popcallback(list);
+                                } else {
+                                    $.sa.warning("保存失败！");
+                                    //fn_SetGrid("");
+                                }
+                            },
+                            "failure": function (data, statusText, jqXHR) {
+                                //fn_SetGrid("");
+                                $.sa.warning(data.msg);
+                            }
+                        }, $("body"));
+        }
+        function fn_ReviewPlans(type) {
+            var content = $("#txtReason").val();
+            var item = { Id: '@ViewBag.PId', PStatus: type, RejectReason: content, UserId: '@Context.Request.Cookies[SessionKeys.SESSION_USERID]' }
+            //$.sa.post('http://infiqaapi.elandcloud.com/infi/api/v1/PlanTask/ReviewPlans',
+            $.sa.post(TASKREVIEWPLANS,
+                        JSON.stringify(item),
+                        {
+                            "success": function (data) {
+                                if (data != null && data.msg == "") {
+                                    var list = "S";
+                                    window.parent.popcallback(list);
+                                } else {
+                                    $.sa.warning("保存失败！");
+                                    //fn_SetGrid("");
+                                }
+                            },
+                            "failure": function (data, statusText, jqXHR) {
+                                //fn_SetGrid("");
+                                $.sa.warning(data.msg);
+                            }
+                        }, $("body"));
+        }
+    </script>
+    <!-- 5. Grid -->
+    <script type="text/javascript">
+        function fn_GridInit() {
+            $('#gridPlans').jqGrid({
+                datatype: 'local',
+                colModel: [
+                    {
+                        name: 'TPTitle', label: '任务简介', width: 260, align: 'left',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'TPDescription', label: '任务概述', width: 556, align: 'left',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'UserName', label: '登记人', width: 150, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'InDateTime', label: '登记日期', width: 100, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                     {
+                         name: 'Delete', label: '删除', width: 90, align: 'center',hidden:true,
+                         cellattr: function (rowId, val, rawObject, cm, rdata) {
+                             return 'class="readonlycell"';
+                         }, formatter: function (v, o, r) {
+                             if (r.PStatus != "T" && r.PStatus != "" && r.PStatus != null) {
+                                 return '<button type="button" class="btn btn-primary btn-sm"  style="width:100%;" disabled="disabled" onclick="fn_DeleteTaskPlan(' + o.rowId + ')">删除</button>';
+                             } else {
+                                 return '<button type="button" class="btn btn-primary btn-sm"  style="width:100%;"  onclick="fn_DeleteTaskPlan(' + o.rowId + ')">删除</button>';
+                             }
+                         }, unformat: function () {
+                             return 0;
+                         }
+                     },
+        {
+            name: 'TCId', label: 'TCId', width: 103, align: 'center', hidden: true
+        },
+        {
+            name: 'TPId', label: 'TPId', width: 103, align: 'center', hidden: true
+        },
+        {
+            name: 'InUserId', label: 'InUserId', width: 103, align: 'center', hidden: true
+        }
+                ],
+                width: $('#Grid').width(),
+                shrinkToFit: false,
+                height: 'auto',
+                rownumbers: true,
+                rownumWidth: 50,
+                rowNum: 15,
+                rowList: [15, 30, 45],
+                footerrow: false,
+                cellsubmit: 'clientArray',
+                pager: jQuery('#pager'),
+                cellEdit: true,
+                editurl: 'clientArray',
+                viewrecords: true,
+                //autoScroll: false,
+                gridComplete: function (id) {
+                    var rowNum = parseInt($(this).getGridParam("records"), 50);
+                    if (rowNum > 0) {
+                        $(".ui-jqgrid-sdiv").show();
+                    }
+                    else {
+                        $(".ui-jqgrid-sdiv").hide();
+                        //                    ShowNoDataDiv("grid","msg","没有数据");
+                    }
+
+                    //fix the pager position
+                    $('#pager_left').css('width', '25%');
+                    $('#pager_right').css('width', '25%');
+
+                    $("[aria-describedby='gridPlans_rn']").addClass("readonlycell");
+                }
+                @*,
+                beforeEditCell: function (rowid, cellname, value, iRow, iCol) {
+                    if ('@ViewBag.PStatus' != "T") {
+                        $(this).jqGrid('setCell', rowid, 'TPTitle', { 'editable': false });
+                    }
+                }*@
+            });       
+        }
+
+        function fn_SetGrid(mydata) {
+            mydata = mydata || [];
+            $('#gridPlans').clearGridData()
+            .setGridParam({
+                data: mydata
+            }).trigger('reloadGrid');
+        }
+    </script>
+}
+<div class="row">
+    <div class="col-xs-12" style="padding-top:5px; padding-left:0px;">       
+            <div class="col-xs-6">
+                <div class="form-inline input-group">
+                    <label class="input-group-addon title-sm">经销商</label>
+                    <input size="16" type="text" class="form-control" id="txtDisName" disabled>
+                    <input type="text" id="txtDisCode" style="display:none;">
+                </div>
+            </div>
+            <div class="col-xs-6">
+                <div class="input-group form-inline">
+                    <span class="input-group-addon title-sm">计划标题</span>
+                    <input size="16" type="text" value="" class="form-control" id="txtTitle" disabled />
+                </div>
+            </div>     
+    </div>
+        <div class="col-xs-12" style="padding-top:5px; padding-left:0px;">
+            <div class="col-xs-6">
+                <div class="input-group form-inline">
+                    <span class="input-group-addon title-sm">拜访时间</span>
+                    <input size="16" type="text" class="form-control form_datetime text-center" id="txtVisitDateTime" disabled/>
+                </div>
+            </div>
+            <div class="col-xs-6">
+                <div class="input-group">
+                    <span class="input-group-addon title-sm">拜访类型</span>
+                    <select class="form-control" id="selType" disabled></select>
+                </div>
+            </div>
+        </div>
+    
+    <div class="row" style="margin-top:5px;">
+        <div id="Grid" class="col-xs-12" style="margin-top:5px;">
+            <table id="gridPlans" class="ui-jqgrid-htable"></table>
+            <div id="pager" class="page">
+            </div>
+        </div>
+    </div>
+    @*<div class="row" style="padding-top:5px;">
+        <div class="col-md-12">
+            <div class="pull-right">
+                <button class="btn btn-primary" id="btnSub">
+                    <span class="fa fa-save gap-icon"></span>提交审核
+                </button>
+                <button class="btn btn-primary" id="btnTem">
+                    <span class="fa fa-save gap-icon"></span>暂存
+                </button>
+                <button class="btn btn-primary" id="btnPush">
+                        <span class="fa fa-plus gap-icon"></span>推送经销商通知
+                    </button>
+                <button class="btn btn-primary" id="btnPrint">
+                    <span class="fa fa-print gap-icon"></span>打印任务书
+                </button>
+                <button class="btn btn-primary" id="btnClose">
+                    <span class="fa fa-remove gap-icon"></span>关闭任务
+                </button>
+            </div>
+        </div>
+    </div>*@
+    <div class="row" style="padding-top:5px;">
+        <div class="col-xs-12">
+            <div class="pull-left">
+                <button class="btn btn-primary" id="btnYes" onclick='fn_ReviewPlans("P")'>
+                    <span class="fa fa-save gap-icon"></span>通过
+                </button>
+                <button class="btn btn-primary" id="btnNo" onclick='fn_ReviewPlans("F")'>
+                    <span class="fa fa-remove gap-icon"></span>不通过
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="row" style="padding-top:5px;">
+        <div class="col-xs-12">
+            <textarea class="form-control" id="txtReason"></textarea>
+        </div>
+    </div>
+</div>

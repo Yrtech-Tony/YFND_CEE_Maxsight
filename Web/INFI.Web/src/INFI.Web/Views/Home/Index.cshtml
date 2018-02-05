@@ -1,0 +1,594 @@
+﻿@{
+    Layout = "_LayoutMenu";
+    ViewData["Title"] = "英菲尼迪区域管理工具包";
+}
+@section HeadCss{
+    <link rel="stylesheet" href="~/css/design/common.css" />
+    <link rel="stylesheet" href="~/css/design/style.css" />
+    <!--日历-->
+    <link rel="stylesheet" href="~/css/design/asDatepicker.css">
+    <style type="text/css">
+        .meng .eventlist {
+            background-color: #fff;
+            width: 400px;
+            height: 361px;
+            padding: 19px 34px;
+            left: 50%;
+            margin-left: -385px;
+            top: 50%;
+            margin-top: -460px;
+            color: #a0a0a0;
+            background-color: beige;
+            border-radius: 10px;
+        }
+
+        .meng .showlist {
+            overflow-y: auto;
+            line-height: 28px;
+            height: 300px;
+            width: 330px;
+        }
+
+            .meng .showlist p {
+                border-bottom: 1px solid #eeeeee;
+                padding: 0 5px;
+            }
+
+                .meng .showlist p span {
+                    width: 322px;
+                    display: inline-block;
+                }
+
+        .dotasklist {
+            /*background-color: lightyellow;*/
+            width: 620px;
+            height: 381px;
+            /*padding: 19px 34px;*/
+            /*padding-left:22px;*/
+            left: 50%;
+            top: 50%;
+            color: #a0a0a0;
+            line-height: 28px;
+            overflow-y: auto;
+        }
+
+            .dotasklist p {
+                border-bottom: 1px solid #eeeeee;
+                padding: 0 3px;
+            }
+
+                .dotasklist p span {
+                    width: 270px;
+                    display: inline-block;
+                }
+
+        ol {
+            list-style-type: decimal;
+            width: 580px;
+        }
+
+            ol li {
+                list-style-position: outside;
+            }
+
+        .index_tz ol {
+            list-style-type: decimal;
+            width: 880px;
+        }
+
+        .plancolor {
+            color: #00b7ee;
+        }
+
+        .noticeacolor {
+            color: #86b926;
+        }
+
+        .noticefcolor {
+            color: #86b926;
+        }
+
+        .impacolor {
+            color: #00b7ee;
+        }
+
+        .imprcolor {
+            color: #fd6100;
+        }
+
+        .modal-header-custom {
+            padding-bottom: 10px;
+            padding-left: 0px;
+            padding-top: 0px;
+            border-bottom: 2px solid #e5e5e5 hidden;
+            min-height: 16.42857143px;
+        }
+
+        div.dotasklist > ol.list-group {
+            width: 620px;
+        }
+
+        .height14 {
+            height: 446px;
+        }
+
+        div.container2 {
+            width: 1140px;
+        }
+
+            div.container2 > div.cx_out {
+                border-bottom: hidden;
+                padding-bottom: 25px;
+                /*width: 850px;*/
+                width: 1140px;
+            }
+
+                div.container2 > div.cx_out > ul.fix > li.cx_inner {
+                    /*padding: 11px 20px 11px 10px;*/
+                    /*width:380px;*/
+                    width: 530px;
+                    margin-top: 20px;
+                    /*height: 78px;*/
+                    height: 118px;
+                    /*background-color: lightyellow;*/
+                }
+
+                    div.container2 > div.cx_out > ul.fix > li.cx_inner > div.cx_innertime {
+                        background-color: #eeeeee;
+                        /*background-color: #f3d501;*/
+                        width: 75px;
+                        color: #313131;
+                        padding: 5px 0;
+                        margin-right: 20px;
+                    }
+
+                    div.container2 > div.cx_out > ul.fix > li.cx_inner > div.cx_con {
+                        /*width: 285px;*/
+                        width: 380px;
+                    }
+
+        div.container1 > div.index_rili {
+            width: 535px;
+            padding-left: 20px;
+            height: 438px;
+            padding-bottom: 23px;
+        }
+
+        .cx_con p {
+            line-height: unset;
+        }
+    </style>
+}
+<div class="row">
+    <div class="right_bt fix">
+        @*<a  class="now db fl time" id="a_date_id"><span class="kuai ml40 mr10"></span></a>*@
+        <a class="now db fl time" id="a_date_id" style="text-decoration:none;"><span class="kuai ml5 mr10"></span></a>
+    </div>
+    <p class="border"></p>
+    <div class="container1 fix height14">
+        <div class="fl index_rili fix" id="box1" style="border-right: 1px solid #dcdcdc;width:446px;padding-left:0px;">
+            <div class="fr vw_listmore pr25 pt20 mr20"><a href="/Calendar/CAL010" id="calendar_more_id"><span></span><span></span><span></span></a></div>
+            <p class="index_kbt">日历和计划任务</p>
+            <input type="text" id="calendar" class="bottombtn" style="display:none">
+        </div>
+        @*<div class="fl index_rili fix" id="box2" style="padding-left:52px;">
+                <p class="cle index_kbt">待办事项</p>
+                <div class="dotasklist index_tabcon">
+                    <ol class="list-group"></ol>
+                </div>
+            </div>*@
+        <div class="fl index_rili fix" id="box3" style="padding-left:52px;">
+            <p class="cle index_kbt">通告</p>
+            <br />
+            @*第四次*@
+            @*<a href="~/Template/2017上半年东风英菲尼迪CEE项目审核通告.pdf">2017上半年东风英菲尼迪CEE项目审核通告.pdf</a>
+            <br /><br />
+            <a href="~/Template/关于条款74内容更新说明.pdf">关于条款74内容更新说明.pdf</a>
+            <br /><br />
+            <a href="~/Template/2017年CEE项目说明会问答解析-2017.4.17.pdf">2017年CEE项目说明会问答解析-2017.4.17.pdf</a>
+            <br /><br />
+            <a href="~/Template/CEE检查标准条款系统检查方法_适用于2017年.pdf">CEE检查标准条款系统检查方法_适用于2017年.pdf</a>
+            <br /><br />
+            <a href="~/Template/英菲尼迪经销商CEE项目检查文件准备清单.pdf">英菲尼迪经销商CEE项目检查文件准备清单.pdf</a>
+            <br /><br />
+            <a href="~/Template/英菲尼迪培训学院在线学习系统操作手册（经销商管理员）-2017.pdf" >英菲尼迪培训学院在线学习系统操作手册（经销商管理员）-2017.pdf</a>*@
+            @*第五次 2017-9-8 8:58:18*@
+            <a href="~/Template/2017下半年东风英菲尼迪CEE项目审核通告.pdf">2017下半年东风英菲尼迪CEE项目审核通告.pdf</a>
+            <br /><br />
+            <a href="~/Template/新DMS系统新车销售业务-经销商公告1.0.pdf">新DMS系统新车销售业务-经销商公告1.0.pdf</a>
+            <br /><br />
+            <a href="~/Template/2017下半年东风英菲尼迪经销商综合运营能力考核标准.pdf">2017下半年东风英菲尼迪经销商综合运营能力考核标准.pdf</a>
+            <br /><br />
+            @* Modify by dong.limin 2017年10月9日10:57:15*@
+            @*<a href="~/Template/2017销售漏斗产品强化培训CEE检核点.pdf">2017销售漏斗产品强化培训CEE检核点.pdf</a>
+            <br /><br />*@ 
+            @*Modify by dong.limin 2017年10月10日10:57:15*@
+            @*<a href="~/Template/2017下半年关于产品亮点、试乘试驾、交车流程考核题库-170927.xlsx">2017下半年关于产品亮点、试乘试驾、交车流程考核题库-170927.xlsx</a>
+            <br /><br />*@
+            <a href="~/Template/2017下半年关于产品亮点、试乘试驾、交车流程考核题库-171010 (更新).xlsx">2017下半年关于产品亮点、试乘试驾、交车流程考核题库-171010 (更新).xlsx</a>
+            <br /><br />
+            <a href="~/Template/2017年英菲尼迪标准名片模板.rar">2017年英菲尼迪标准名片模板.rar</a>
+            <br /><br />
+            @*Add by dong.limin 2017年10月11日13:06:02*@
+            <a href="~/Template/交车流程相关单据模板更新-20171010.rar">交车流程相关单据模板更新-20171010.rar</a>
+            <br /><br />
+            <hr style="margin:0px;height:1px;border:0px;background-color:#D5D5D5;color:#D5D5D5;" />
+            <a href="~/Template/2017年CEE项目说明会问答解析-2017.4.17.pdf">2017年CEE项目说明会问答解析-2017.4.17.pdf</a>
+            <br /><br />
+            <a href="~/Template/CEE检查标准条款系统检查方法_适用于2017年.pdf">CEE检查标准条款系统检查方法_适用于2017年.pdf</a>
+            <br /><br />
+            @*Modify by dong.limin 2017-10-16 12:58:11*@
+            <a href="~/Template/英菲尼迪经销商CEE项目检查文件准备清单-更新.pdf">英菲尼迪经销商CEE项目检查文件准备清单-更新.pdf</a>
+            <br /><br />
+            <a href="~/Template/英菲尼迪培训学院在线学习系统操作手册（经销商管理员）-2017.pdf">英菲尼迪培训学院在线学习系统操作手册（经销商管理员）-2017.pdf</a>
+        </div>
+    </div>
+    @*<div class="container1" style="border-top: 1px solid #dcdcdc;">
+            <div class="index_tz">
+                <p class="index_kbt">未读通知</p>
+                <ol>
+                </ol>
+            </div>
+        </div>*@
+    @*<div class="container2"  style="border-top: 1px solid #dcdcdc;" id="box3">
+            <div class="cx_out">
+           </div>
+        </div>*@
+</div>
+<div class="row">
+    <div class="meng rel">
+        <div class="abs eventlist">
+            <div class='modal-header-custom'>
+                <button type='button' class='close'>
+                    <span aria-hidden='true'>&times;</span>
+                    <span class='sr-only'>Close</span>
+                </button>
+                <h4 class='modal-title' style="color:#178acc">事件列表</h4>
+            </div>
+            <div class="showlist">
+
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts{
+    @*<script type="text/javascript" src="~/js/design/jquery-1.8.3.min.js"></script>*@
+    <script src="~/js/design/jquery.mobile.custom.js"></script>
+    <script src="~/js/design/jquery.toc.min.js"></script>
+    <script src="~/js/design/prism.js"></script>
+    <script src="~/js/design/jquery-asDatepicker.js"></script>
+    <script src="~/js/design/language.js"></script>
+    <script type="text/javascript" src="~/js/design/js.js"></script>
+    <script type="text/javascript">
+        var searchD;
+        $(document).ready(function () {
+            var date = new Date();
+            var year = date.getFullYear();
+            var month = date.getMonth() + 1;
+            var day = date.getDate();
+            var welcomestr = "今天是" + year + "年" + month + "月" + day + "日，欢迎您！";
+            $("#a_date_id").append(welcomestr);
+            $('.close').click(function () {
+                $('.meng').animate({ opacity: 0 }, 600);
+                $('.meng').css({
+                    display: 'none'
+                });
+            });
+            searchD = year + '-' + month + '-' + day;
+            fn_SearchData(searchD);
+            //if (GetCookie("infi_ABOUT_INDEX") == "F") {
+            //    $.sa.warning("关于条款74内容更新说明");
+            //    $.sa.pop('/Home/About', {
+            //        height: 550, width: 750, title: '<span class="fa fa-hand-o-right gap-icon-right"></span><span>通告</span>',
+            //        params: {}
+            //    });
+            //    Setcookie("infi_ABOUT_INDEX", "N");
+            //}
+
+            //$.sa.warning('<p>尊敬的东风英菲尼迪经销商伙伴：</p>'
+            //    + '<p style="text-indent:2em;">您好！</p>'
+            //    + '<p style="text-indent:2em;">关于销售漏斗网络线索神秘客留资和意向客户进店的调研工作，我们将继续在6月-12月执行，且调研结果会计入到CEE下半年成绩。烦请经销商积极配合，并重视销售漏斗系统的准确录入。</p>'                
+            //    + '<p>此致</p>'
+            //    + 'CEE审核组');
+            //第四次更新，2017-7-4 10:35:21
+            //$.sa.warning('<p>尊敬的经销商伙伴，您好！</p>'
+            //  + '<p style="text-indent:2em;">2017年上半年东风英菲尼迪CEE检查成绩已经公布，请在“报告查看”模块下载查阅。</p>'
+            //  + '<p style="text-indent:2em;">2017年上半年CEE项目经销商考核通过的标准如下：</p>'
+            //  + '<p style="text-indent:4em;">1、必达条款全部通过</p>'
+            //  + '<p style="text-indent:4em;">2、总成绩需达到85分</p>'
+            //  + '<p style="text-indent:2em;">考核未通过的经销商伙伴如需申请验证审核（补考），请在7月10日前发送邮件至ND_CEE@infiniti.com.cn，补考时间7月15日—21日。具体的审核时间将在现场审核前2天通知经销商，验证审核只针对首轮审核未通过的条款进行验证。</p>'
+            //  + '<p style="text-indent:2em;">考核未通过的经销商伙伴如果放弃补考，亦请发送放弃补考的邮件说明至ND_CEE@infiniti.com.cn邮箱。</p>'
+            //  + '<p style="text-indent:2em;">如有任何问题，请致电010-84505283，分机7301，7307</p>'
+            //  + '<p>此致。</p>', { width: '800px', height: '520px' });
+            //2017-8-1 10:56:35 关闭
+            //第五次更新，2017-9-8 8:41:02
+            //$.sa.warning('<p>尊敬的 东风英菲尼迪经销商伙伴</p>'
+            //  + '<p style="text-indent:2em;">您好！</p>'
+            //  + '<p style="text-indent:2em;">非常感谢您对东风英菲尼迪CEE审查项目一直以来的支持和配合！</p>'
+            //  + '<p style="text-indent:2em;">2017年下半年东风英菲尼迪CEE审核将于10月国庆节后至11月期间进行（月末、周末及节假日不进店审核）。</p>'
+            //  + '<p style="text-indent:2em;">为更有效地支持经销商完成2017下半年CEE审核的准备工作，CEE平台会陆续公布支持文件，请持续关注并下载参考。下半年的审核体系有细微调整，请注意查看平台登陆首页公布的《2017下半年东风英菲尼迪经销商综合运营能力考核标准》。</p>'
+            //  + '<p style="text-indent:2em;">另外，经销商在审核期间如有特殊情况，请在9月30号前登陆平台进行报备，逾期将不予受理。其中规避进店日期的报备，规避时间不能连续超过7天。</p>'
+            //  + '<p style="text-indent:2em;">报备内容包括：车展、会议、新车型发布活动、区域或全国性培训、开业、停电、施工等。</p>'
+            //  + '<p style="text-indent:2em;">请贵司认真准备，并按照要求的时间结点提交相关报备资料。</p>'
+            //  + '<p style="text-indent:2em;">如有问题，请拨打CEE热线：010-84505283 分机 7301,7307</p>'
+            //  + '<p></p>'
+            //  + '<div style="text-align:right;"><p>网络质量提升团队</p>'
+            //  + '<p>经销商网络发展部</p>'
+            //  + '<p>CEE审核项目组</p></div>', { width: '820px', height: '520px' });
+            //第六次更新，2017年12月13日8:30:29
+            $.sa.warning('<p>尊敬的经销商伙伴，您好！</p>'
+           + '<p style="text-indent:2em;">2017年下半年东风英菲尼迪CEE检查成绩已经公布，请在“报告查看”模块下载查阅。</p>'
+           + '<p style="text-indent:2em;">2017年下半年CEE项目经销商考核通过的标准如下：</p>'
+           + '<p style="text-indent:6em;">1、必达条款全部通过</p>'
+           + '<p style="text-indent:6em;">2、总成绩需达到85分</p>'
+           + '<p style="text-indent:2em;">考核未通过的经销商伙伴如需申请补考，请在12月15日前发送邮件至ND_CEE@infiniti.com.cn，补考时间在12月18日—22日期间，具体的入店审核时间将在报名后2日内通知经销商。本次审核仅针对下半年审核未通过的条款进行验证。</p>'
+           + '<p style="text-indent:2em;">考核未通过的经销商伙伴如果放弃补考，亦请发送放弃补考的邮件说明至ND_CEE@infiniti.com.cn邮箱。</p>'
+           + '<p style="text-indent:2em;">最终补考结果会在12月30日前上传至平台“报告查看”模块。</p>'
+           + '<p style="text-indent:2em;">如有任何问题，请致电010-84505283，分机7301，7307</p>'
+           + '<p></p>'
+           + '<p>此致。</p>', { width: '820px', height: '520px' });
+        });
+    </script>
+    <script type="text/javascript">
+        function fn_SearchData(searchdate) {
+            $.sa.get(GETALLDOITEMLIST, {
+                'UserId': '@Context.Request.Cookies[SessionKeys.SESSION_USERID]',
+                'SearchDate': searchdate
+            },
+            {
+                "success": function (data) {
+                    if (data != null && data.body != "") {
+                        var resultList = JSON.parse(data.body)
+                        $("#calendar").asDatepicker({
+                            namespace: 'calendar',
+                            lang: 'zh',
+                            position: 'top',
+                            alwaysShow: true,
+                            eventCustom: resultList.FirstItemList
+                        });
+                        $("#calendar").hide();
+                        if ('@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]' == 'S' || '@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]' == 'D') {
+                            $("#box2").hide();
+                            //$("#box3").hide();
+                            return;
+                        }
+                        var secondList = resultList.SecondItemList;
+                        if (secondList != undefined && secondList != null && secondList.length != 0 && !(secondList.length == 1 && secondList[0].Title == "")) {
+                            $("div.dotasklist>ol").children().remove();
+                            for (var y = 0; y < secondList.length; y++) {
+                                var classVal = '';
+                                if (secondList[y].DataType == "Plan")
+                                    classVal = 'plancolor';
+                                else if (secondList[y].DataType == "ANoticeA")
+                                    classVal = 'noticeacolor';
+                                else if (secondList[y].DataType == "BImpA")
+                                    classVal = 'impacolor';
+                                else if (secondList[y].DataType == "CImpR")
+                                    classVal = 'imprcolor';
+                                else if (secondList[y].DataType == "ANoticeF")
+                                    classVal = 'noticefcolor';
+                                var idval = secondList[y].DataType + '|' + secondList[y].Id + '|' + secondList[y].Status;
+                                var $p = $('<li id=' + idval + ' class="list-group-item" style="cursor: pointer"><font style="cursor: auto;font-weight:bold;" class="' + classVal + '">[' + secondList[y].TypeName + ']</font>' + secondList[y].Title + '</li>');
+                                $p.on('dblclick', function (e) {
+                                    var clickobj = $(e.target);
+                                    var searchval = clickobj.attr('id');
+                                    fn_OpenPopByPageType(searchval);
+                                });
+                                $("div.dotasklist>ol").append($p);
+                            }
+
+                        } else {
+                            $("div.dotasklist>ol").children().remove();
+                            var $p = $('<li>无待办事项</li>');
+                            $("div.dotasklist>ol").append($p);
+                        }
+                        //var thirdList = resultList.ThirdItemList;
+                        //if (thirdList != undefined && thirdList != null&&!(thirdList.length == 1 && thirdList[0].Title == "")) {
+                        //    for (var y = 0; y < thirdList.length; y++) {
+                        //        var idval = thirdList[y].Id + '|' + thirdList[y].Status;
+                        //        var $p = $('<li id=' + idval + '>' + thirdList[y].Title + "</li>");
+                        //        $p.on('dblclick', function (e) {
+                        //            var clickobj = $(e.target);
+                        //            var searchval = clickobj.attr('id');
+                        //            fn_OpenPopByPageType(searchval);
+                        //        });
+                        //        $("div.index_tz>ol").append($p);
+                        //    }
+                        //}
+                        //var thirdList = resultList.ThirdItemList;
+                        //if (thirdList != undefined && thirdList != null && thirdList.length != 0 && !(thirdList.length == 1 && thirdList[0].Title == "")) {
+                        //    var $divcon = $('div.container2>div.cx_out');
+                        //    $divcon.find("ul").remove();
+                        //    for (var y = 0; y < thirdList.length; y++) {
+                        //        var idval = thirdList[y].Id + '|' + thirdList[y].Status;
+                        //        var $ulrow;
+                        //        var $tdarray = thirdList[y].Title.split(',');
+                        //        if (y % 2 == 0) {
+                        //            $ulrow = $('<ul class="fix" id=' + ('ulrow_' + y) + '></ul>');
+                        //            $divcon.append($ulrow);
+                        //            var $p = $('<li class="fix cx_inner rel fl mr30"   style="cursor: pointer" id="' + idval + '" name="' + idval + '"><img src="../css/images/index2_26.png" alt=""class="abs s_jb" name="' + idval + '"><div class="fl cx_innertime" name="' + idval + '"><span class="tc db" name="' + idval + '">' + $tdarray[0].substr(6, 2) + '</span><i class="tc db"  name="' + idval + '">' + $tdarray[0].substr(0, 6) + '</i></div><div class="fl cx_con"><p  name="' + idval + '">' + $tdarray[1] + '</p><span class="fix cx_conxq db"  name="' + idval + '">' + thirdList[y].Content + '</span></div></li>');
+                        //            $p.on('dblclick', function (e) {
+                        //                var clickobj = $(e.target);
+                        //                var searchval = clickobj.attr('name');
+                        //                if(searchval!=undefined&&searchval!=null)
+                        //                        fn_OpenPopByPageType(searchval);
+                        //            });
+                        //        } else {
+                        //            var $p = $('<li class="fix cx_inner rel fl"   style="cursor: pointer" id="' + idval + '" name="' + idval + '"><img src="../css/images/index2_26.png" alt=""class="abs s_jb" name="' + idval + '"><div class="fl cx_innertime" name="' + idval + '"><span class="tc db" name="' + idval + '">' + $tdarray[0].substr(6, 2) + '</span><i class="tc db"  name="' + idval + '">' + $tdarray[0].substr(0, 6) + '</i></div><div class="fl cx_con"><p  name="' + idval + '">' + $tdarray[1] + '</p><span class="fix cx_conxq db"  name="' + idval + '">' + thirdList[y].Content + '</span></div></li>');
+                        //            $p.on('dblclick', function (e) {
+                        //                var clickobj = $(e.target);
+                        //                var searchval = clickobj.attr('name');
+                        //                console.log(clickobj[0]);
+                        //                if(searchval!=undefined&&searchval!=null)
+                        //                       fn_OpenPopByPageType(searchval);
+                        //            });
+                        //        }
+                        //        $ulrow.append($p);
+                        //    }
+                        //} else {
+                        //    var $divcon = $('div.container2>div.cx_out');
+                        //    $divcon.find("ul").remove();
+                        //    var $ulrow = $('<ul class="fix" ></ul>');
+                        //    $divcon.append($ulrow);
+                        //    var $p = $('<li class="fix cx_inner rel fl"><div class="fl cx_con"><p>无未读通知</p></div></li>');
+                        //    $ulrow.append($p);
+                        //}
+                    }
+                },
+                "failure": function (data, statusText, jqXHR) {
+                    $("#callback_1_layer").html(data.msg);
+                }
+            }
+            , $("body"));
+        }
+    </script>
+    <script type="text/javascript">
+        function fn_OpenPopup(clickday) {
+            var date = new Date();
+            var year = date.getFullYear();
+            var month = date.getMonth() + 1 >= 10 ? date.getMonth() + 1 : "0" + (date.getMonth() + 1);
+            var clickday = clickday >= 10 ? clickday : "0" + clickday;
+            console.log(year + '-' + month + '-' + clickday);
+            $.sa.get(SEACHCALENDERITEM, {
+                'UserId': '@Context.Request.Cookies[SessionKeys.SESSION_USERID]',
+                'SDate': year + '-' + month + '-' + clickday,
+                'EDate': year + '-' + month + '-' + clickday
+            },
+            {
+                "success": function (data) {
+                    if (data != null && data.body != "" && data.body != "[]") {
+                        $("div.showlist").find("p").remove();
+                        var resultList = JSON.parse(data.body);
+                        //$('.meng .eventlist').css("height", (44 * resultList.length+56) + "px");
+                        for (var y = 0; y < resultList.length; y++) {
+                            var $p = $("<p><span>" + resultList[y].Title + "</span></p>");
+                            $("div.showlist").append($p);
+                            if (resultList[y].Type == "S")
+                                $p.css("background-color", "yellow");
+                        }
+                        $('.meng').animate({ opacity: 1 }, 600);
+                        $('.meng').css({ display: 'block' });
+                    }
+                },
+                "failure": function (data, statusText, jqXHR) {
+                    $("#callback_1_layer").html(data.msg);
+                }
+            }
+            , $("body"));
+        }
+    </script>
+    <script type="text/javascript">
+        function fn_OpenPopByPageType(searchval) {
+            var valarry = searchval.split('|');
+            var pagetype = valarry[0];
+            if (pagetype == 'ANoticeA') {
+                $.sa.pop('/Notice/NOT020P', {
+                    height: '520px', width: 850, title: '<span class="fa fa-hand-o-right gap-icon-right"></span><span>通知审核</span>',
+                    params: {
+                        NoticeReaderId: valarry[1],
+                        Status: valarry[2]
+                    }
+                    , popcallback: function (msg) {
+                        if (msg != null && msg.length > 0) {
+                            $("div.dotasklist>ol").find('li[id="' + searchval + '"]').remove();
+                            if ($("div.dotasklist>ol").find('li').length == 0) {
+                                $("div.dotasklist>ol").children().remove();
+                                var $p = $('<li>无待办事项</li>');
+                                $("div.dotasklist>ol").append($p);
+                            }
+                        }
+                    }
+                });
+            } else if (pagetype == 'BImpA') {
+                var idarray = valarry[1].split(',');
+                $.sa.pop("/Improve/IMP020P", {
+                    params: { 'pamImprovementId': idarray[0], 'pamPlanStatus': valarry[2], 'pamPlanApproalYN': idarray[3], 'pamAllocateYN': idarray[5] }
+                    , width: 1000, maxHeight: '520px', title: '<span class="fa fa-hand-o-right gap-icon-right"></span><span>改善计划</span>'
+                    , popcallback: function () {
+                        $("div.dotasklist>ol").find('li[id="' + searchval + '"]').remove();
+                        if ($("div.dotasklist>ol").find('li').length == 0) {
+                            $("div.dotasklist>ol").children().remove();
+                            var $p = $('<li>无待办事项</li>');
+                            $("div.dotasklist>ol").append($p);
+                        }
+                    }
+                });
+            } else if (pagetype == 'ANoticeF') {
+                var idarray = valarry[1].split(',');
+                $.sa.pop('/Notice/NOT030P', {
+                    height: '520px', width: 800, title: '<span class="fa fa-hand-o-right gap-icon-right"></span><span>通知反馈</span>',
+                    params: {
+                        NoticeId: idarray[0],
+                        DisId: idarray[2],
+                        DepartId: idarray[3],
+                        FeedbackYN: idarray[5],
+                        Status: valarry[2]
+                    }
+                        , popcallback: function (msg) {
+                            if (msg != null && msg.length > 0) {
+                                $("div.dotasklist>ol").find('li[id="' + searchval + '"]').remove();
+                                if ($("div.dotasklist>ol").find('li').length == 0) {
+                                    $("div.dotasklist>ol").children().remove();
+                                    var $p = $('<li>无待办事项</li>');
+                                    $("div.dotasklist>ol").append($p);
+                                }
+                            }
+                        }
+                });
+            } else if (pagetype == 'CImpR') {
+                var idarray = valarry[1].split(',');
+                $.sa.pop("/Improve/IMP030P", {
+                    params: {
+                        'pamImprovementId': idarray[1],
+                        'pamImpResultId': idarray[0],
+                        'pamResultStatus': valarry[2],
+                        'pamResultApproalYN': idarray[5],
+                        'pamAllocateYN': idarray[6]
+                    }, width: 1000, maxHeight: '520px', title: '<span class="fa fa-hand-o-right gap-icon-right"></span><span>改善结果</span>'
+                    , popcallback: function () {
+                        $("div.dotasklist>ol").find('li[id="' + searchval + '"]').remove();
+                        if ($("div.dotasklist>ol").find('li').length == 0) {
+                            $("div.dotasklist>ol").children().remove();
+                            var $p = $('<li>无待办事项</li>');
+                            $("div.dotasklist>ol").append($p);
+                        }
+                    }
+                });
+
+            } else if (pagetype == 'Plan') {
+                $.sa.pop('/Task/TAS030P', {
+                    height: '520px', width: 1200, title: '<span class="fa fa-hand-o-right gap-icon-right"></span><span>计划任务详细</span>',
+                    params: {
+                        PId: valarry[1],
+                        PStatus: valarry[2]
+                    }
+                    , popcallback: function (msg) {
+                        if (msg != null && msg.length > 0) {
+                            $("div.dotasklist>ol").find('li[id="' + searchval + '"]').remove();
+                            if ($("div.dotasklist>ol").find('li').length == 0) {
+                                $("div.dotasklist>ol").children().remove();
+                                var $p = $('<li>无待办事项</li>');
+                                $("div.dotasklist>ol").append($p);
+                            }
+                        }
+                    }
+                });
+            } else {
+                var idarray = valarry[0].split(',');
+                $.sa.pop("/Notice/NOT010P", {
+                    params: {
+                        'pamId': idarray[0],
+                        'pamStatus': valarry[1],
+                        'pamDisId': idarray[1],
+                        'pamDepartId': idarray[2]
+                    }
+                    , width: 1000, height: '520px', title: '<span class="fa fa-hand-o-right gap-icon-right"></span><span>通知详细</span>'
+                    , popcallback: function () {
+                        fn_SearchData(searchD);
+                    }, close: function () { alert(1); }
+                });
+                setTimeout(function () { fn_SearchData(searchD) }, 2000);
+            }
+        }
+    </script>
+}

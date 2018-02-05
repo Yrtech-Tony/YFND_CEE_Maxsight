@@ -1,0 +1,234 @@
+﻿@{
+    // submenus
+    List<object> SubMenus = new List<object>();
+    //SubMenus.Add(new[] { "Patterns","Box","Form" });
+    SubMenus.Add(new[] { "Ajax" });
+    SubMenus.Add(new[] { "Message" });
+    SubMenus.Add(new[] { "Bootstrap" });
+    SubMenus.Add(new[] { "Lightbox", "Lightbox", "LightBox_Hogan" });
+    SubMenus.Add(new[] { "Validate", "Validate", "ValidateBootstrap" });
+    SubMenus.Add(new[] { "Hogan", "Hogan", "HoganUseCassette" });
+    //SubMenus.Add(new[] { "JQGrid", "JQGrid", "ModuleList" });
+    SubMenus.Add(new[] { "CKEditor" });
+    SubMenus.Add(new[] { "InnoAP" });
+    SubMenus.Add(new[] { "Uploadify" });
+
+    // user info
+    Eland.GBFW.Web.Common.Support.GBFWUserIdentity userIdentity = null;
+    if (User.Identity.IsAuthenticated) {
+        userIdentity = Helper.GetUser() as Eland.GBFW.Web.Common.Support.GBFWUserIdentity;
+        if (userIdentity == null) {
+            userIdentity = new Eland.GBFW.Web.Common.Support.GBFWUserIdentity()
+            {
+                LoginId = User.Identity.Name,
+                Name = User.Identity.Name,
+                AuthType = Eland.GBFW.UserMng.Domain.AuthType.InternalAccount
+            };
+        }
+    }
+
+    
+}
+
+<div class="navbar navbar-fixed-top">
+    <div class="navbar-inner">  
+        <div class="container">
+            <button type="button" class="btn btn-navbar collapsed" data-toggle="collapse" data-target=".nav-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+
+            <a class="brand" href="/">LampGlass</a>
+            <div class="nav-collapse">
+                <ul class="nav pull-left">
+                @{
+                    foreach (object MenuObject in SubMenus)
+                    {
+                        string[] Menus = (string[])MenuObject;
+
+                        String SubMenuClass = "";
+
+                        if (((ViewContext.Controller.ValueProvider.GetValue("controller").RawValue.ToString() == "Sample" )||
+                            (ViewContext.Controller.ValueProvider.GetValue("controller").RawValue.ToString() == "Patterns"))
+                            &&
+                            Menus.Contains(ViewContext.Controller.ValueProvider.GetValue("action").RawValue.ToString()))
+                        {
+                            SubMenuClass = "active";
+                        }
+
+                        String MenuString = Menus[0];
+                        if (Menus.Length > 1)
+                        {
+                            MenuString += " <b class=\"caret\"></b>";
+                        }
+
+                        String MenuAttr = "";
+                        if (Menus.Length > 1)
+                        {
+                            MenuAttr = " class=\"dropdown-toggle\" data-toggle=\"dropdown\"";
+                        }
+                                
+                        <li class="@(Menus.Length > 1 ? "dropdown" : "") @SubMenuClass">
+                            <a href="@(Menus.Length > 1 ? "#" : Url.Action(@Menus[0], "Sample"))" @Html.Raw(MenuAttr)>
+                                @Html.Raw(MenuString)
+                            </a>
+                            @if (Menus.Length > 1)
+                            {
+                                <ul class="dropdown-menu">
+                                @for (int i = 1; i < Menus.Length; i++)
+                                {
+                                    if(Menus[i] != "Box")
+                                    {
+                                        <li><a href="@Url.Action(Menus[i], "Sample")">@Menus[i]</a></li>
+                                    }
+                                    else
+                                    {
+                                        <li><a href="@Url.Action(Menus[i], "Patterns")">@Menus[i]</a></li>
+                                    }
+                                }
+                                </ul>
+                            }
+                        </li>   
+                    }
+                }
+                </ul>
+                <ul class="nav pull-right">
+                    <li class="dropdown pull-right">
+                        <a class="dropdown-toggle" href="#" data-toggle="dropdown">@(User.Identity.IsAuthenticated ? userIdentity.Name : Resource.SignIn)
+                            <strong class="caret"></strong></a>
+                        @if (!User.Identity.IsAuthenticated)
+                        {
+                        <div class="dropdown-menu" style="padding: 15px; padding-bottom: 0px;">
+                            @using (Html.BeginForm("Login", "Membership", new { }, FormMethod.Post, new { id = "login" }))
+                            {
+                            <fieldset>
+                                <div class="control-group">
+                                    <label class="control-label" for="loginId"><string>@Resource.UserName</string></label>
+                                    <div class="controls">
+                                        @Html.TextBox("loginId", "", new
+                                   {
+                                       style = "margin-botton: 1px;",
+                                       rel = "popover",
+                                       minlength = 2,
+                                       data_content = "Enter your login name.",
+                                       data_original_title = "User Name"
+                                   })
+                                    </div>
+                                </div>
+                                <div class="control-group">
+                                    <label class="control-label" for="loginPassword"><string>@Resource.Password</string></label>
+                                    <div class="controls">
+                                        @Html.Password("loginPassword", "", new
+                                   {
+                                       style = "margin-botton: 1px;",
+                                       rel = "popover",
+                                       minlength = 2,
+                                       data_content = "Enter your password.",
+                                       data_original_title = "Password"
+                                   })
+                                    </div>
+                                </div>
+
+                                <div class="control-group">
+                                    <label class="control-label" for="rememberme">
+                                    @Html.CheckBox("rememberme", false, new
+                               {
+                                   style = "float: left; margin-botton: 10px;",
+                                   rel = "popover",
+                                   data_content = "Remember your id when come back again.",
+                                   data_original_title = "Remember me"
+                               })&nbsp;<string>@Resource.RememberMe</string></label>
+                                </div>
+                                <input id="returnUrl" type="hidden" name="returnUrl" value="" />
+                                <input id="culture" type="hidden" name="culture" value="@UICulture" />
+                                <input class="btn btn-primary" style="clear: left; width: 100%; height: 32px; font-size: 13px;" 
+                                    type="submit" name="commit" value="@Resource.SignIn" />
+                            </fieldset>
+                            } <!-- end of login form -->
+                        </div> <!-- end of dropdown menu -->
+                        } // is not authenticated
+                        else
+                        {
+                            <ul class="dropdown-menu">
+                                <li><a id="logout" href="#">@GetMessage("Logout")</a></li>
+                            </ul>
+                        }
+
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    (function ($) {
+        $('.dropdown-toggle').dropdown();
+        $('.dropdown input, .dropdown label').click(
+            function (e) {
+                e.stopPropagation();
+            }
+        );
+        @if (!User.Identity.IsAuthenticated) {
+            string returnUrl = Request.QueryString["returnUrl"] != null?
+                               Request.QueryString["returnUrl"]:
+                               FormsAuthentication.DefaultUrl;
+        <text>
+        $("#login").validate({
+            rules : {
+                loginId: {
+                    required: true,
+                    remote: {
+                        url: "@Url.Action("ExistUser", "Membership")",
+                        type: 'post',
+                        data: { loginId: function() {
+                            return $('#loginId').val();
+                            }
+                        }
+                    }
+                },
+                loginPassword: "required"
+            },
+            messages : {
+                loginId : { remote: "@Resource.FWM002" } <!-- not exists -->
+            },
+            submitHandler : function(form) {
+                var token = $(form).serialize();
+                $.wf.post("@Url.Action("TryLogin", "Membership")",
+                    token,
+                    function (data) {
+                        if (data.type == "SUCCESS") {
+                            window.location = data.returnurl;
+                        } else if (data.type == "SSO_ACCOUNT") {
+                            submitLogin(document.getElementById('frmSSO'),
+                                $('#loginId').val(),
+                                $('#loginPassword').val(),
+                                "@returnUrl");
+                        }
+                        else 
+                            $.wf.alert(data.msg, { "type": "warning" });
+                    },
+                    "json",
+                    $('.body-wrapper')
+                );
+                //form.submit();  
+            } 
+        });
+    </text>}
+        @if (User.Identity.IsAuthenticated) {
+            if (userIdentity.AuthType == Eland.GBFW.UserMng.Domain.AuthType.InternalAccount)
+            {
+            } else {<text>
+        $('#logout').click(function () {
+            $.wf.get("@Url.Action("Logout", "Membership")",
+                function (data) {
+                    window.location.reload();
+                },
+                "json",
+                $('.body-wrapper')
+            ); <!-- ajax -->
+        }); <!-- click -->
+        </text>}
+        }
+    })(jQuery);    
+</script>

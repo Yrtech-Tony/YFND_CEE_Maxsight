@@ -1,0 +1,518 @@
+﻿@{
+    Layout = "_LayoutOfPop";
+    ViewData["Title"] = "Improvement";
+}
+@section HeadCss{
+    <style type="text/css">
+        .depselshow{
+            display:none;
+        }
+    </style>
+}
+<div class="row">
+    <div class="col-md-2  col-sm-2 col-xs-2">
+        <div class="input-group">
+            <label class="input-group-addon title-xs ">是否分配</label>
+            <div class="form-control">
+                <label class="checkbox-inline">
+                    <input type="checkbox" id="chkAllocateYN"/>&nbsp;
+                </label>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4  col-sm-4 col-xs-4">
+        <div class="input-group depselshow">
+            <span class="input-group-addon title-xs "><font color="red">*</font>&nbsp;责任部门</span>
+            <select class="form-control" id="select_Department_id"></select>
+        </div>
+    </div>
+</div>
+<div class="row gap-top">
+    <div class="col-sm-3 col-xs-3">
+        <div class="input-group">
+            <span class="input-group-addon title-xs ">计划审批</span>
+            <select class="form-control readonly" id="select_Plan_id"></select>
+        </div>
+    </div>
+    <div class="col-sm-3 col-xs-3">
+        <div class="input-group">
+            <span class="input-group-addon title-xs ">计划完成时间</span>
+            <span class="form-control" readonly id="span_PlanDate_id">2016-11-12</span>
+    </div>
+    </div>
+    <div class="col-sm-3 col-xs-3">
+        <div class="input-group">
+            <span class="input-group-addon title-xs ">结果审批</span>
+            <select class="form-control readonly" id="select_Result_id"></select>
+        </div>
+    </div>
+    <div class="col-sm-3 col-xs-3">
+        <div class="input-group">
+            <span class="input-group-addon title-xs ">结果完成时间</span>
+            <span class="form-control" readonly id="span_ResultDate_id">2016-11-12</span>
+        </div>
+    </div>
+</div>
+<div class="row gap-top">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="input-group">
+            <span class="input-group-addon title-xs "><font color="red">*</font>&nbsp;改善指示</span>
+            <textarea class="form-control" rows="4" id="textarea_DistributorCaption_id" maxlength="500"></textarea>
+        </div>
+    </div>
+</div>
+<div class="row gap-top">
+    <div class="col-md-12 col-sm-12  col-xs-12">
+        <div class="input-group">
+            <span class="input-group-addon title-xs ">&nbsp;失分说明</span>
+            <textarea class="form-control" readonly rows="2" id="textarea_LostDescription_id" maxlength="500"></textarea>
+        </div>
+    </div>
+</div>
+<div class="row gap-top">
+    <div class="col-md-4 col-sm-4 col-xs-4">
+            <div id="GridPicDesc" class="col-md-12 col-sm-12 col-xs-12">
+                <table id="gridpicdesc" class="ui-jqgrid-htable"></table>
+                <div id="pagerpicdesc" class="page">
+                </div>
+            </div>
+    </div>
+    <div class="col-md-4 col-sm-4  col-xs-4">
+            <div id="Grid" class="col-md-12 col-sm-12  col-xs-12">
+                <table id="grid" class="ui-jqgrid-htable"></table>
+                <div id="pager" class="page">
+                </div>
+            </div>
+    </div>
+    <div class="col-md-4 col-sm-4 col-xs-4">
+            <div id="GridStandard" class="col-md-12 col-sm-12 col-xs-12">
+                <table id="gridstandard" class="ui-jqgrid-htable"></table>
+                <div id="pagerstandart" class="page">
+                </div>
+            </div>
+    </div>
+</div>
+<div class="row" style="position: absolute; left: 45%; margin-top: 1em">
+    <div class="col-md-12 col-sm-12  col-xs-12 gap-top" id="btn_save_id">
+        <button type="button" class="btn btn-success" onclick="fn_saveAllocate()">
+            <span class="fa fa-save gap-icon"></span><span>保存</span>
+        </button>
+    </div>
+</div>
+@section Scripts{
+    <style>
+    </style>
+    <!-- 1. Load -->
+    <script type="text/javascript">
+        var _grid, _gridName;
+        var _gridstandard, _gridstandardName;
+        var _gridpicdesc, _gridpicdescName;
+        var _reqTPId, _reqItemId, _reqPlanApproalYN, _reqResultApproalYN, _reqPlanStatus, _reqImprovementId;
+        _reqTPId = Request["pamTPId"];
+        _reqItemId = Request["pamItemId"];
+        _reqPlanApproalYN = Request["pamPlanApproalYN"];
+        _reqResultApproalYN = Request["pamResultApproalYN"]; 
+
+        _reqPlanStatus = Request["pamPlanStatus"];
+        _reqImprovementId = Request["pamImprovementId"];
+        $(document).ready(function () {
+            fn_Initial();
+            fn_InitEvent();
+            fn_InitialData();
+            fn_GridInit();
+            fn_GridStandardInit();
+            fn_GridPicDescInit();
+        });
+    </script>
+    <!-- 2. Init -->
+    <script type="text/javascript">
+        function fn_Initial() {
+            _gridName = 'grid';
+            _grid = $('#' + _gridName);
+            _gridstandardName = 'gridstandard';
+            _gridstandard = $('#' + _gridstandardName);
+            _gridpicdescName = 'gridpicdesc';
+            _gridpicdesc = $('#' + _gridpicdescName);
+            console.log('@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]');
+            if ((_reqPlanStatus == undefined || _reqPlanStatus == 'A'||_reqPlanStatus=='B') && '@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]' == 'S') {
+               
+            } else {
+                $('#btn_save_id').hide();
+                $('#textarea_DistributorCaption_id').attr("readonly", true);
+                $('#chkAllocateYN').attr("disabled", true);
+                $('#select_Department_id').attr("disabled", true);
+
+            }
+        }
+        function fn_InitEvent() {
+            $("#chkAllocateYN").on("change", function () {
+                if ($("#chkAllocateYN").is(":checked")){
+                    $('#select_Department_id').val("select");
+                    $('#select_Department_id').parent().removeClass("depselshow");
+                }
+                else
+                    $('#select_Department_id').parent().addClass("depselshow");
+            });
+        }
+    </script>
+     <!-- 3. InitData -->
+    <script type="text/javascript">
+        function fn_InitialData() {
+            $.sa.get(SEARCHNOTIFIDEP,
+                {
+                    "success": function (data)
+                    {
+                        $("#select_Department_id").html(JsonToCboList("DisName", "DisCode", eval(data.body), { 'SelectType': 'SELECT' }));
+
+                      
+                        var approval = [];
+                        var varDis = {};
+                        varDis["Name"] = '服务经理';
+                        varDis["Value"] = "1";
+                        approval.push(varDis);
+                        var varZon = {};
+                        varZon["Name"] = '地区';
+                        varZon["Value"] = "2";
+                        approval.push(varZon);
+                        $("#select_Plan_id").html(JsonToCboList("Name", "Value", approval));
+                        $("#select_Result_id").html(JsonToCboList("Name", "Value", approval));
+
+                        $("#select_Plan_id").attr("disabled", true);
+                        $("#select_Result_id").attr("disabled", true);
+                        if (_reqPlanApproalYN=="true")
+                            $("#select_Plan_id").val("2");
+                        else
+                            $("#select_Plan_id").val("1");
+                        if (_reqResultApproalYN == "true")
+                            $("#select_Result_id").val("2");
+                        else
+                            $("#select_Result_id").val("1");
+
+                        fn_SearchData();
+
+                    },
+                    "failure": function (data, statusText, jqXHR) {
+                        $("#callback_1_layer").html(data.msg);
+                    }
+                }
+                , $(".Grid")
+                , { type: "spin" });
+        }
+    </script>
+    <!--4. Grid Pictrue-->
+    <script type="text/javascript">
+        function fn_GridInit() {
+            _grid.jqGrid({
+                datatype: 'local',
+                colModel: [
+                    {
+                        name: 'PicName', label: '照片名称', width: 120, align: 'left',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }, hidden: true
+                    },
+                    {
+                        name: 'TypeName', label: '照片类型', width: 60, align: 'left',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }, hidden: true
+                    },
+                    {
+                        name: 'Url', label: '失分照片', width: 120, align: 'left',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }, formatter: fn_PreviewFile, unformat: fn_UnPreviewFile
+                    }
+                ],
+                width: $('#Grid').width(),
+                height: 'auto',
+                rownumbers: true,
+                rownumWidth: 50,
+                rowNum: 5,
+                rowList: [5, 10],
+                footerrow: false,
+                cellsubmit: 'clientArray',
+                pager: jQuery('#pager'),
+                cellEdit: true,
+                editurl: 'clientArray',
+                viewrecords: true,
+                afterInsertRow: function (rowid, r) {
+                },
+                gridComplete: function (id) {
+                    var rowNum = parseInt($(this).getGridParam("records"), 50);
+                    if (rowNum > 0) {
+                        $(".ui-jqgrid-sdiv").show();
+                    }
+                    else {
+                        $(".ui-jqgrid-sdiv").hide();
+                    }
+
+                    //fix the pager position
+                    $('#pager_left').css('width', '25%');
+                    $('#pager_right').css('width', '25%');
+
+                    $("[aria-describedby='grid_rn']").addClass("readonlycell");
+                }
+            });
+        }
+        function fn_SetGrid(mydata) {
+            mydata = mydata || [];
+            _grid.clearGridData()
+            .setGridParam({
+                data: mydata
+            }).trigger('reloadGrid');
+        }
+        ///预览按钮
+        function fn_PreviewFile(cellvalue, options, rowObject) {
+            return "<a href='" + rowObject.Url + "' data-lightbox='PreviewPicture' style='margin-left: 10px; cursor: pointer; color: #0088cc; text-decoration: underline;'>" + rowObject.PicName + "</a>";
+        }
+
+        function fn_UnPreviewFile(cellvalue, options, rowObject) {
+            return "";
+        }
+    </script>
+     <!--5.Grid Standard-->
+    <script type="text/javascript">
+        function fn_GridStandardInit() {
+            _gridstandard.jqGrid({
+                    datatype: 'local',
+                    colModel: [
+                        {
+                            name: 'CContent', label: '检查标准', width:120, align: 'left',
+                            cellattr: function (rowId, val, rawObject, cm, rdata) {
+                                return 'class="readonlycell"';
+                            }
+                        },
+                        {
+                            name: 'Result', label: '不合格', width: 60, align: 'center',
+                            cellattr: function (rowId, val, rawObject, cm, rdata) {
+                                return 'class="readonlycell"';
+                            }
+                        }
+                    ],
+                    width: $('#GridStandard').width(),
+                    height: 'auto',
+                    rownumbers: true,
+                    rownumWidth: 50,
+                    rowNum: 5,
+                    rowList: [5, 10],
+                    footerrow: false,
+                    cellsubmit: 'clientArray',
+                    pager: jQuery('#pagerstandart'),
+                    cellEdit: true,
+                    editurl: 'clientArray',
+                    viewrecords: true,
+                    afterInsertRow: function (rowid, r) {
+                    },
+                    gridComplete: function (id) {
+                        var rowNum = parseInt($(this).getGridParam("records"), 50);
+                        if (rowNum > 0) {
+                            $(".ui-jqgrid-sdiv").show();
+                        }
+                        else {
+                            $(".ui-jqgrid-sdiv").hide();
+                        }
+
+                        //fix the pager position
+                        $('#pagerstandart_left').css('width', '25%');
+                        $('#pagerstandart_right').css('width', '25%');
+
+                        $("[aria-describedby='gridstandard_rn']").addClass("readonlycell");
+                    }
+                });
+            }
+        function fn_SetStandardGrid(mydata) {
+                mydata = mydata || [];
+                _gridstandard.clearGridData()
+                .setGridParam({
+                    data: mydata
+                }).trigger('reloadGrid');
+            }
+    </script>
+    <!--6. Search-->
+    <script type="text/javascript">
+        function fn_SearchData() {
+            $.sa.get(GETIMPPLANORRESULTDETAIL, {
+                            'improvementId': _reqImprovementId == undefined ? 0 : parseInt(_reqImprovementId)
+                            , 'searchType': 'A'
+                            , 'impResultId': 0
+                            , 'tPId':_reqTPId == undefined ? 0 : parseInt(_reqTPId)
+                            , 'itemId':_reqItemId == undefined ? 0 : parseInt(_reqItemId)
+                        },
+                       {
+                           "success": function (data) {
+                               if (data.resultCode == 0) {
+                                   fn_SetGrid(JSON.parse(data.body).PicList);
+                                   fn_SetStandardGrid(JSON.parse(data.body).StandardList);
+                                   fn_SetPicDescGrid(JSON.parse(data.body).PicDescList);
+                                   $('#textarea_LostDescription_id').val(JSON.parse(data.body).LostDescription);
+                                   $('#span_PlanDate_id').text(JSON.parse(data.body).PlanFinishDate);
+                                   $('#span_ResultDate_id').text(JSON.parse(data.body).ResultFinishDate);
+                                   if (JSON.parse(data.body).AllocateYN)
+                                   {
+                                       $('#chkAllocateYN').attr("checked", "checked");
+                                       $('#select_Department_id').parent().removeClass("depselshow");
+                                   }
+                                   else {
+                                       $('#chkAllocateYN').removeAttr("checked");
+                                       $('#select_Department_id').parent().addClass("depselshow");
+                                   }
+                                   if (_reqImprovementId != undefined && _reqImprovementId != 0) {
+                                       $('#select_Department_id').val(JSON.parse(data.body).ExecDepartment);
+                                       $('#textarea_DistributorCaption_id').val(JSON.parse(data.body).ImprovementCaption);
+
+                                   }
+                               } else {
+                                   $.sa.alert(data.msg);
+                               }
+                           },
+                           "failure": function (data, statusText, jqXHR) {
+                               $("#callback_1_layer").html(data.msg);
+                           }
+                       }
+                       , $("body"));
+        }
+    </script>
+    <!--7. Validate Before Save-->
+    <script type="text/javascript">
+        function fn_saveValidate() {
+            var isValiA = true;
+            var isValiB = true;
+            var isVali = true;
+            if ($("#chkAllocateYN").is(":checked")&&($.trim($("#select_Department_id").val()) == "" || $.trim($("#select_Department_id").val()) == "select"))
+            {
+                isValiA = false;
+            }
+            if ($.trim($("#textarea_DistributorCaption_id").val()) == "")
+            {
+                isValiB = false;
+            }
+            if (!isValiA) {
+                $.sa.warning("请选择责任部门",{
+                    title: "警告！", fnClose: function () {
+                        $("#select_Department_id").focus();
+                    }
+                });
+            } else if (!isValiB) {
+                $.sa.warning("请输入指示内容", {
+                    title: "警告！", fnClose: function () {
+                        $("#textarea_DistributorCaption_id").focus();
+                    }
+                });
+            }
+            isVali = isValiA & isValiB;
+            return isVali;
+        }
+    </script>
+    <!--7. Save-->
+    <script type="text/javascript">
+        function fn_saveAllocate() {
+            if (fn_saveValidate()) {
+                var myDialog = $.sa.confirm('是否要保存？', {
+                    fnOk: function () {
+                        var param = {};
+                        param["tPId"] = parseInt(_reqTPId);
+                        param["itemId"] = parseInt(_reqItemId);
+                        param["departmentId"] =$("#select_Department_id").val()==null|| $.trim($("#select_Department_id").val()) == "select" ? 0 : parseInt($("#select_Department_id").val());
+                        param["allocateYN"] = $("#chkAllocateYN").is(":checked");
+                        param["planApprovalId"] = 0;
+                        param["processId"] = 0;
+                        param["improvementCaption"] = $("#textarea_DistributorCaption_id").val();
+                        param["lostDescription"] = $("#textarea_LostDescription_id").val();
+                        param["inUserId"] = '@Context.Request.Cookies[SessionKeys.SESSION_USERID]';
+                        $.sa.post(INSERTALLOCATEIMPROVEMENTITEM,
+                            JSON.stringify(param),
+                                 {
+                                     "success": function (data) {
+                                         if (data.resultCode == 0) {
+                                             $.sa.alert('分配完成', { maxWidth: '400px', minWidth: '300px', showClose: false });
+                                             myDialog.close();
+                                             parent.popcallback('1');
+                                         } else {
+                                             $.sa.alert(data.msg);
+                                             myDialog.close();
+                                         }
+                                     },
+                                     "failure": function (data, statusText, jqXHR) {
+                                         $("#callback_1_layer").html(data.msg);
+                                     }
+                                 }
+                                 , $("body"));
+                    }
+                });
+
+                }
+
+        }
+    </script>
+
+    <!--4. Grid Pictrue-->
+    <script type="text/javascript">
+        function fn_GridPicDescInit() {
+            _gridpicdesc.jqGrid({
+                    datatype: 'local',
+                    colModel: [
+                        {
+                            name: 'PicDesc', label: '标准名称', width: 120, align: 'left',
+                            cellattr: function (rowId, val, rawObject, cm, rdata) {
+                                return 'class="readonlycell"';
+                            }, formatter: fn_PreviewPicDesc, unformat: fn_UnPreviewPicDesc
+                        },
+                        {
+                            name: 'Url', hidden: true
+                        }
+                    ],
+                    width: $('#GridPicDesc').width(),
+                    height: 'auto',
+                    rownumbers: true,
+                    rownumWidth: 50,
+                    rowNum: 5,
+                    rowList: [5, 10],
+                    footerrow: false,
+                    cellsubmit: 'clientArray',
+                    pager: jQuery('#pagerpicdesc'),
+                    cellEdit: true,
+                    editurl: 'clientArray',
+                    viewrecords: true,
+                    afterInsertRow: function (rowid, r) {
+                    },
+                    gridComplete: function (id) {
+                        var rowNum = parseInt($(this).getGridParam("records"), 50);
+                        if (rowNum > 0) {
+                            $(".ui-jqgrid-sdiv").show();
+                        }
+                        else {
+                            $(".ui-jqgrid-sdiv").hide();
+                        }
+
+                        //fix the pager position
+                        $('#pagerpicdesc_left').css('width', '25%');
+                        $('#pagerpicdesc_right').css('width', '25%');
+
+                        $("[aria-describedby='gridpicdesc_rn']").addClass("readonlycell");
+                    }
+                });
+        }
+        function fn_SetPicDescGrid(mydata) {
+            mydata = mydata || [];
+            _gridpicdesc.clearGridData()
+            .setGridParam({
+                data: mydata
+            }).trigger('reloadGrid');
+        }
+        ///预览按钮
+        function fn_PreviewPicDesc(cellvalue, options, rowObject) {
+            if (rowObject.Url == undefined || rowObject.Url == "" || rowObject.Url == null)
+                return rowObject.PicDesc
+            else
+            return "<a href='" + rowObject.Url + "' data-lightbox='PreviewPicture' style='margin-left: 10px; cursor: pointer; color: #0088cc; text-decoration: underline;'>" + rowObject.PicDesc + "</a>";
+        }
+
+        function fn_UnPreviewPicDesc(cellvalue, options, rowObject) {
+            return "";
+        }
+    </script>
+
+}
+
+

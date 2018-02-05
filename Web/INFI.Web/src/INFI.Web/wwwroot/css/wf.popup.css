@@ -1,0 +1,125 @@
+﻿/*
+@reference ../../bootstrap/css/bootstrap-custom.css
+*/
+
+html, body {
+	height: 100%;
+	/*overflow: auto;*/ /* TIP: set it to 'auto' if you have long content pages */
+}
+
+.wf-popup-popin {
+	position: fixed;
+	background: #fff;
+	overflow: hidden;
+	top: 50%;
+	left: 50%;
+	z-index: 1050;
+	box-shadow: 0 1px 10px 0 rgba(0, 0, 0, .5);
+	opacity:0;
+
+/*
+	-webkit-transform: scale(0.8);
+	-moz-transform: scale(0.8);
+	-ms-transform: scale(0.8);
+	-o-transform: scale(0.8);
+	transform: scale(0.8);
+*/
+	border-radius:5px;
+}
+
+.wf-popup-overlay {
+	background: #000;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 1040;
+}
+
+body.wf-popup-ready, 
+.wf-popup-ready .wf-popup-popin, 
+.wf-popup-ready .wf-popup-overlay {
+	-webkit-transform-origin: 50% 50%;
+	-moz-transform-origin: 50% 50%;
+	-ms-transform-origin: 50% 50%;
+	-o-transform-origin: 50% 50%;
+	transform-origin: 50% 50%;
+/*
+	-webkit-transition: 0.3s all ease-out;
+	-moz-transition: 0.3s all ease-out;
+	-ms-transition: 0.3s all ease-out;
+	-o-transition: 0.3s all ease-out;
+	transition: 0.3s all ease-out
+*/
+}
+
+/*
+.wf-popup-popin.stack {
+	-webkit-transform: scale(1.15);
+	-moz-transform: scale(1.15);
+	-ms-transform: scale(1.15);
+	-o-transform: scale(1.15);
+	transform: scale(1.15);
+}
+
+.wf-popup-active .wf-popup-popin {
+	-webkit-transform: scale(1.0);
+	-moz-transform: scale(1.0);
+	-ms-transform: scale(1.0);
+	-o-transform: scale(1.0);
+	transform: scale(1.0);
+}
+*/
+
+/*
+.wf-popup-active .wf-popup-popin.stack {
+	-webkit-transform: scale(1.0);
+	-moz-transform: scale(1.0);
+	-ms-transform: scale(1.0);
+	-o-transform: scale(1.0);
+	transform: scale(1.0);
+}
+*/
+
+.wf-popup-active .wf-popup-blur {
+	-webkit-filter: blur(1px);
+	-moz-filter: blur(1px);
+	-ms-filter: blur(1px);
+	-o-filter: blur(1px);
+	filter: blur(1px);
+}
+
+.wf-popup-close {
+	margin-top:15px;
+	margin-right:20px;
+}
+
+.wf-popup-header {
+	padding:10px 10px;
+	height:30px;
+	line-height:30px;
+	background-color:#F0F0F0;
+	border-top-left-radius:5px;
+	border-top-right-radius:5px;
+}
+
+.wf-popup-header h5 {
+    margin:0;
+	height:30px;
+	line-height:30px;
+	padding:0 10px;
+}
+
+.wf-popup-content {
+	padding:10px 20px;
+	-webkit-overflow-scrolling: touch;
+}
+
+.wf-popup-footer {
+	height:30px;
+	padding:10px 0;
+	width:100%;
+	text-align:center;
+	border-top:1px solid #F0F0F0;
+}

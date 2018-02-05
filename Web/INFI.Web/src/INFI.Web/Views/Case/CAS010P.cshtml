@@ -1,0 +1,502 @@
+﻿@{
+    Layout = "_LayoutOfPop";
+    ViewData["Title"] = "Case";
+}
+@section HeadCss{
+}
+<div class="row">
+    <div class="col-md-6 col-sm-6 col-xs-6">
+        <div class="input-group">
+            <span class="input-group-addon title-sm "><font color="red">*</font>&nbsp;案例类型</span>
+            <select class="form-control" id="select_CaseType_id"></select>
+        </div>
+    </div>
+    <div class="col-md-6 col-sm-6 col-xs-6">
+        <div class="input-group">
+            <span class="input-group-addon title-sm ">案例编号</span>
+            <input class="form-control" readonly id="input_CaseNo_id" maxlength="20" />
+        </div>
+    </div>
+</div>
+<div class="row gap-top">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="input-group">
+            <span class="input-group-addon title-sm "><font color="red">*</font>&nbsp;案例标题</span>
+            <input class="form-control" id="input_CaseTitle_id" maxlength="100" />
+        </div>
+    </div>
+</div>
+<div class="row gap-top">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="input-group">
+            <span class="input-group-addon title-sm "><font color="red">*</font>&nbsp;案例要点</span>
+            <textarea class="form-control" rows="3" id="textarea_CasePoint_id" maxlength="2000"></textarea>
+        </div>
+    </div>
+</div>
+<div class="row gap-top">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="input-group">
+            <span class="input-group-addon title-sm "><font color="red">*</font>&nbsp;问题说明</span>
+            <textarea class="form-control" rows="2" id="textarea_LossRemark_id" maxlength="2000"></textarea>
+        </div>
+    </div>
+</div>
+<div class="row gap-top">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="input-group">
+            <span class="input-group-addon title-sm "><font color="red">*</font>&nbsp;改善措施</span>
+            <textarea class="form-control" rows="3" id="textarea_ImproveRemark_id" maxlength="2000"></textarea>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        @*<br>*@
+        @*<form name=theform>
+                <input type="radio" name="myradio" value="local_name" checked="checked" /> 上传文件名字保持本地文件名字
+                <input type="radio" name="myradio" value="random_name" /> 上传文件名字是随机文件名
+                <br />
+                上传到指定目录:<input type="text" id='dirname' placeholder="如果不填，默认是上传到根目录" size=50>
+            </form>
+
+            <h4>您所选择的文件列表：</h4>
+            <div id="ossfile">你的浏览器不支持flash,Silverlight或者HTML5！</div>
+
+            <br />*@
+        <div id="ossfile"></div>
+        <br />
+        <div id="container">
+            <a id="selectfiles" href="javascript:void(0);" class='btn btn-primary'><span class="fa fa-cloud-upload gap-icon"></span>上传文件</a>
+            <a id="postfiles" href="javascript:void(0);" class='btn' style="display:none">开始上传</a>
+        </div>
+
+        @*<pre id="console"></pre>*@
+
+        @*<p>&nbsp;</p>*@
+    </div>
+</div>
+<div class="row">
+    <div id="Grid" class="col-md-12 col-sm-12 col-xs-12">
+        <table id="grid" class="ui-jqgrid-htable"></table>
+        <div id="pager" class="page">
+        </div>
+    </div>
+</div>
+<div class="row" style="position: absolute; left: 45%; margin-top: 1em">
+    <div class="col-md-6 col-sm-6  col-xs-6 gap-top">
+        <button type="button" class="btn btn-primary" id="btn_save_id">
+            <span class="fa fa-save gap-icon"></span><span>确定</span>
+        </button>
+    </div>
+</div>
+<div class="row" style="display:none">
+    <div class="col-sm-12 col-sm-12 col-xs-12">
+        <div class="form-group">
+            <label>Select file</label>
+            <input type="file" id="file" />
+        </div>
+        <div class="form-group">
+            <input type="button" class="btn btn-primary" id="file-button" value="Upload" />
+        </div>
+        <div class="form-group">
+            <div class="progress">
+                <div id="progress-bar"
+                     class="progress-bar"
+                     role="progressbar"
+                     aria-valuenow="0"
+                     aria-valuemin="0"
+                     aria-valuemax="100" style="min-width: 2em;">
+                    0%
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts{
+    <style>
+    </style>
+    <!-- 1. Load -->
+    <script type="text/javascript">
+        var _grid, _gridName, _showDelBtn = false;
+            var _reqId;
+            _reqId = Request["pamId"];
+            $(document).ready(function () {
+                fn_Initial();
+                fn_InitialData();
+                fn_GridInit();
+                if (_reqId != undefined && _reqId != null && _reqId != 0)
+                    fn_SearchData();
+            });
+    </script>
+    <!-- 2. Init -->
+    <script type="text/javascript">
+        function fn_Initial() {
+            _gridName = 'grid';
+            _grid = $('#' + _gridName);
+
+            $('#btn_save_id').on('click', function () {
+                fn_saveAllocate();
+            });
+            if ('@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]' == 'Z'
+               || '@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]' == 'R'
+               || '@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]' == 'A') {
+                $('#btn_save_id').show();
+            } else {
+                $('#btn_save_id').hide();
+                $("#selectfiles").hide();
+                $('#input_CaseTitle_id').attr("readonly", true);
+                $('#select_CaseType_id').attr("disabled", true);
+                $('#textarea_CasePoint_id').attr("readonly", true);
+                $('#textarea_LossRemark_id').attr("readonly", true);
+                $('#textarea_ImproveRemark_id').attr("readonly", true);
+                _showDelBtn = true;
+            }
+        }
+    </script>
+    <!-- 3. InitData -->
+    <script type="text/javascript">
+            function fn_InitialData() {
+                $.sa.get(TASKGETSTATUS, { GroupCode: '12' },
+                  {
+                      "success": function (data) {
+                          $("#select_CaseType_id").html(JsonToCboList("Name", "Value", JSON.parse(data.body), { 'SelectType': 'SELECT' }));
+                      },
+                      "failure": function (data, statusText, jqXHR) {
+                          $("#callback_1_layer").html(data.msg);
+                      }
+                  }
+                  , $(".Grid")
+                  , { type: "spin" });
+            }
+    </script>
+    <!--4. Grid Pictrue-->
+    <script type="text/javascript">
+        function fn_GridInit() {
+            _grid.jqGrid({
+                datatype: 'local',
+                colModel: [
+                    {
+                        name: 'ShareUrl', label: '附件', width: 210, align: 'left',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        },
+                        formatter: fn_PreviewFile, unformat: fn_UnPreviewFile
+                    },
+                    {
+                        name: '', label: '删除', width: 30, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        },
+                        formatter: fn_DeleteFile, unformat: fn_UnDeleteFile, hidden: _showDelBtn
+                    },
+                    {
+                        name: 'Url', hidden:true
+                    },
+                    {
+                        name: 'AttachName', hidden: true
+                    }
+                ],
+                width: $('#Grid').width(),
+                //height: 'auto',
+                minHeight: 0,
+                maxHeight: 10,
+                loadonce:true,
+                rownumbers: true,
+                rownumWidth: 50,
+                rowNum: 10000,
+                //rowList: [5, 10],
+                loadui: true,
+                pginput: false,       // 페이지 입력창을 표시하는 것에 대한 속성
+                pgbuttons: false,     // 페이지 이동 버튼을 표시하는 것에 대한 속성
+                pgtext: null,
+                footerrow: false,
+                cellsubmit: 'clientArray',
+                pager: jQuery('#pager'),
+                cellEdit: true,
+                editurl: 'clientArray',
+                viewrecords: true,
+                afterInsertRow: function (rowid, r) {
+                },
+                gridComplete: function (id) {
+                    var rowNum = parseInt($(this).getGridParam("records"), 50);
+                    if (rowNum > 0) {
+                        $(".ui-jqgrid-sdiv").show();
+                    }
+                    else {
+                        $(".ui-jqgrid-sdiv").hide();
+                    }
+
+                    //fix the pager position
+                    $('#pager_left').css('width', '25%');
+                    $('#pager_right').css('width', '25%');
+
+                    $("[aria-describedby='grid_rn']").addClass("readonlycell");
+                }
+            });
+        }
+        function fn_SetGrid(mydata) {
+            mydata = mydata || [];
+            _grid.clearGridData()
+            .setGridParam({
+                data: mydata
+            }).trigger('reloadGrid');
+        }
+        ///删除按钮
+        function fn_DeleteFile(cellvalue, options, rowObject) {
+            return '<a class="btn" onclick="fn_DoDeleteFile(' + options.rowId + ')"><span class="fa fa-trash-o gap-icon  fa-lg" style="color:red"></span></a>';
+        }
+
+        function fn_UnDeleteFile(cellvalue, options, rowObject) {
+            return "";
+        }
+        function fn_DoDeleteFile(id) {
+            var ids =  $(id).attr("id");
+            if (!ids)
+                ids = id + '';
+            _grid.delRowData(ids);
+        }
+        //添加行
+        function fn_Addrow(picName,key) {
+            var ids = _grid.getDataIDs();
+            var pref = $.jgrid.uidPref;
+            var newid = 1;
+            if (ids && ids.length > 0) {
+                var regx = new RegExp(pref, 'g');
+                var nids = ids.join(',').replace(regx, '').split(',');
+                var maxid = Math.max.apply(Math, nids);
+                newid = maxid + 1;
+            }
+            newid = pref + (newid).toString();
+            var rowdata = {
+                ShareUrl:picName,
+                AttachName: picName,
+                Url: host + g_dirname + key
+            };
+            _grid.addRowData(newid, rowdata, "first");
+            $(_grid.getGridRowById(newid)).addClass("edited");
+        }
+
+        ///预览按钮
+        function fn_PreviewFile(cellvalue, options, rowObject) {
+            var previewPath = rowObject.Url;
+            @*if (rowObject.ShowUrl == undefined&&rowObject.Url!=null)
+                previewPath = '@Url.Action("DownLoadAttachment")?path=uploads'+ "/" + encodeURIComponent(rowObject.Url.substring(rowObject.Url.lastIndexOf('/') + 1)) + '';*@
+            if (rowObject.AttachName.substr(rowObject.AttachName.lastIndexOf(".")) == ".gif" || rowObject.AttachName.substr(rowObject.AttachName.lastIndexOf(".")) == ".jpg" || rowObject.AttachName.substr(rowObject.AttachName.lastIndexOf(".")) == ".png")
+                return "<a href='" + previewPath + "' data-lightbox='PreviewPicture' style='margin-left: 10px; cursor: pointer; color: #0088cc; text-decoration: underline;'>" + rowObject.AttachName + "</a>";
+            else
+            {
+                //return ' <button type="button"  onclick="fn_DownloadForName(' + "'" + rowObject.Url + "'" + ',' + "'" + rowObject.AttachName + "'" + ')" > ' + rowObject.AttachName + '</button>';
+                var url = '@Url.Action("DownLoadForRename", "Case")' + "?fileName=" + encodeURIComponent(rowObject.AttachName) + "&sourcepath=" + previewPath;
+                return " <a href='" + url + "'  class='btn' download='" + rowObject.AttachName + "'>" + rowObject.AttachName + "</a>";
+            }
+        }
+
+        function fn_UnPreviewFile(cellvalue, options, rowObject) {
+            return rowObject.AttachName;
+        }
+        function fn_DownloadForName(path, filename) {
+            $.sa.get('@Url.Action("DownLoadForRename", "Case")', { "fileName": filename, "sourcepath": path },
+            {
+                "success": function (data) {
+                },
+                "failure": function (data, statusText, jqXHR) {
+                    $("#callback_1_layer").html(data.msg);
+                }
+            });
+            //$.ajax({
+            //    type: "POST",
+            //    url: "/Case/DownLoadForRename",
+            //    contentType: false,
+            //    processData: false,
+            //    data: { "fileName": filename, "sourcepath": path },
+            //    success: function (message) {
+            //    },
+            //    error: function () {
+            //    }
+            //});
+        }
+    </script>
+    <!--6. Search-->
+    <script type="text/javascript">
+        function fn_SearchData() {
+            $.sa.get(SEARCHCASESLIST, {
+                       'caseId': _reqId == undefined || _reqId == null ? 0 : parseInt(_reqId)
+                        },
+                       {
+                           "success": function (data) {
+                               if (data.resultCode == 0) {
+                                       var resultDto = JSON.parse(data.body);
+                                       fn_SetGrid(resultDto.AttachList);
+                                       $('#input_CaseTitle_id').val(resultDto.CaseTitle);
+                                       $('#select_CaseType_id').val(resultDto.CaseType);
+                                       $('#input_CaseNo_id').val(resultDto.CaseNo);
+                                       $('#textarea_CasePoint_id').val(resultDto.CasePoint);
+                                       $('#textarea_LossRemark_id').val(resultDto.LossRemark);
+                                       $('#textarea_ImproveRemark_id').val(resultDto.ImproveRemark);
+                               } else {
+                                   $.sa.alert(data.msg);
+                               }
+                           },
+                           "failure": function (data, statusText, jqXHR) {
+                               $("#callback_1_layer").html(data.msg);
+                           }
+                       }
+                       , $("body"));
+        }
+    </script>
+    <!--7. Validate Before Save-->
+    <script type="text/javascript">
+            function fn_saveValidate() {
+                var isValiA = true;
+                var isValiB = true;
+                var isValiC = true;
+                var isValiD = true;
+                var isValiE = true;
+                var isVali = true;
+              
+                if ($.trim($("#select_CaseType_id").val()) == "select"||$.trim($("#select_CaseType_id").val()) == "")
+                        isValiA = false;
+                if ($.trim($("#input_CaseTitle_id").val()) == "")
+                        isValiB = false;
+                if ($.trim($("#textarea_CasePoint_id").val()) == "" ) 
+                        isValiC = false;
+                if ($.trim($("#textarea_LossRemark_id").val()) == "")
+                        isValiD = false;
+                if ($.trim($("#textarea_ImproveRemark_id").val()) == "") 
+                        isValiE = false;
+
+                if (!isValiA) {
+                    $.sa.warning("请选择案例类型", {
+                        title: "警告！", fnClose: function () {
+                            $("#select_CaseType_id").focus();
+                        }
+                    });
+                } else if (!isValiB) {
+                   $.sa.warning("请输入案例标题", {
+                        title: "警告！", fnClose: function () {
+                            $("#input_CaseTitle_id").focus();
+                        }
+                    });
+                } else if (!isValiC) {
+                    $.sa.warning("请输入案例要点", {
+                        title: "警告！", fnClose: function () {
+                            $("#textarea_CasePoint_id").focus();
+                        }
+                    });
+                } else if (!isValiD) {
+                    $.sa.warning("请输入失分说明", {
+                        title: "警告！", fnClose: function () {
+                            $("#textarea_LossRemark_id").focus();
+                        }
+                    });
+                } else if (!isValiE) {
+                    $.sa.warning("请输入改善措施", {
+                        title: "警告！", fnClose: function () {
+                            $("#textarea_ImproveRemark_id").focus();
+                        }
+                    });
+                }
+                isVali = isValiA & isValiB & isValiC & isValiD & isValiE;
+                return isVali;
+            }
+    </script>
+    <!--7. Save-->
+    <script type="text/javascript">
+            function fn_saveAllocate() {
+                if (fn_saveValidate()) {
+                    var myDialog = $.sa.confirm('是否要保存？', {
+                        fnOk: function () {
+                            var editData = _grid.jqGrid("getRowData");
+                            var param = {};
+                            param["Id"] = _reqId == undefined || _reqId == null ? 0 : parseInt(_reqId);
+                            param["CaseType"] = $('#select_CaseType_id').val();
+                            param["CasePoint"] = $('#textarea_CasePoint_id').val();
+                            param["LossRemark"] = $('#textarea_LossRemark_id').val();
+                            param["ImproveRemark"] = $('#textarea_ImproveRemark_id').val();
+                            param["CaseTitle"] = $('#input_CaseTitle_id').val();
+                            param["InUserId"] = '@Context.Request.Cookies[SessionKeys.SESSION_USERID]';
+                            param["AttachList"] = editData;
+                            $.sa.post(SAVECASESINFO,
+                                JSON.stringify(param),
+                                     {
+                                         "success": function (data) {
+                                             if (data.resultCode == 0) {
+                                                 $.sa.alert('保存完成', { maxWidth: '400px', minWidth: '300px', showClose: false });
+                                                 myDialog.close();
+                                                 parent.popcallback('1');
+                                             } else {
+                                                 $.sa.alert(data.msg);
+                                             }
+                                         },
+                                         "failure": function (data, statusText, jqXHR) {
+                                             $("#callback_1_layer").html(data.msg);
+                                         }
+                                     }
+                                     , $("body"));
+                        }
+                    });
+                }
+            }
+    </script>
+
+    <!--test-->
+    <script type="text/javascript">
+        //var appServer = 'http://localhost:3000';
+        //var bucket = 'vgic';
+        //var region = 'oss-cn-beijing.aliyuncs.com';
+        //var urllib = OSS.urllib;
+        //var OSS = OSS.Wrapper;
+        //var STS = OSS.STS;
+        //var applyTokenDo = function (func) {
+        //    //var url = appServer;
+        //    //return urllib.request(url, {
+        //    //    method: 'GET'
+        //    //}).then(function (result) {
+        //    //    var creds = JSON.parse(result.data);
+        //        //console.log(creds);
+        //        var client = new OSS({
+        //            region: "oss-cn-beijing",
+        //            accessKeyId: "3JkljJxvXgjLz80X",
+        //            accessKeySecret: "L2ERHORPk3WkjqfGUb27RlxvT8x5f3",
+        //            //stsToken: creds.SecurityToken,
+        //            bucket: "vgic"
+        //        });
+        //    return func(client);
+        //  //});
+        //};
+        //var progress = function (p) {
+        //    return function (done) {
+        //        var bar = document.getElementById('progress-bar');
+        //        bar.style.width = Math.floor(p * 100) + '%';
+        //        bar.innerHTML = Math.floor(p * 100) + '%';
+        //        done();
+        //    }
+        //};
+        //var uploadFile = function (client) {
+        //    var file = document.getElementById('file').files[0];
+        //    var key = file.name;
+        //    console.log(file.name + ' => ' + file.name);
+        //    return client.multipartUpload(key, file, {
+        //        progress: progress
+        //    }).then(function (res) {
+        //        console.log('upload success: %j', res);
+        //    });
+        //};
+        //window.onload = function () {
+        //    document.getElementById('file-button').onclick = function () {
+        //        applyTokenDo(uploadFile);
+        //    }
+        //};
+    </script>
+
+
+    <!--last reference-->
+
+
+    
+
+
+}
+
+

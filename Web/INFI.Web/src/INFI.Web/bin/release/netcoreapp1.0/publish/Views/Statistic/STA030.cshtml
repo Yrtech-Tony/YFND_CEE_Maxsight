@@ -1,0 +1,1141 @@
+﻿@{
+    Layout = "_LayoutMenu";
+    ViewData["Title"] = "巡检待改善报告";
+}
+@section HeadCss{
+    <style>
+        #txtSDate.datewidth, #txtEDate.datewidth {
+            width: 48.5%;
+        }
+
+        .datemargin {
+            margin-left: 3%;
+            margin-top: -1.4em;
+        }
+
+        .gap-icon {
+            margin-right: 5px;
+        }
+
+        .jqgridbuttonwidth {
+            width: 98%;
+        }
+        .input-group-c{
+            position: relative;
+            display: inline-block;
+            border-collapse: separate;
+        }
+    </style>
+}
+<div class="row gap-top">
+    <div class="col-md-12">
+        <span class="fa fa-flag fa-lg gap-icon"></span><span class="page-mtitle">巡检分析</span><span>&nbsp;>&nbsp;</span>
+        <span class="page-title">巡检待改善报告</span>
+        <div class="pull-right">
+            <button class="btn btn-primary" id="btnSearch">
+                <span class="fa fa-search gap-icon"></span>查询
+            </button>
+            <button class="btn btn-primary" id="btnExcelUpload">
+                <span class="fa fa-file-excel-o gap-icon"></span>Excel导出
+            </button>
+        </div>
+    </div>
+</div>
+<div class="row gap-top">
+    <div class="col-md-4 col-sm-6">
+        <div class="input-group">
+            <span class="input-group-addon title-xs  ">登记期间</span>
+            <input size="16" type="text" value="@ViewBag.FirstDay" class="form_datetime form-control text-center datewidth"
+                   id="txtSDate" />
+            <span>~</span>
+            <input size="16" type="text" value="@ViewBag.CurrentDate" class="form_datetime form-control text-center datewidth datemargin"
+                   id="txtEDate" />
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="input-group">
+            <span class="input-group-addon title-xs  ">任务种类</span>
+            <select class="form-control" id="select_tctype_id"></select>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="input-group">
+            <span class="input-group-addon title-xs  ">来源类型</span>
+            <select class="form-control" id="select_sourcetype_id"></select>
+        </div>
+    </div>
+</div>
+<div class="row gap-top">
+    <div class="col-md-4">
+        <div class="input-group">
+            <span class="input-group-addon title-xs  ">改善项</span>
+            <input type="text" class="form-control" id="input_itemname_id" maxlength="10" />
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="input-group">
+            <span class="input-group-addon title-xs  ">分配状态</span>
+            <div class="form-control" id="rdo_allocate_id">
+                <label class="radio-inline" style="cursor:default">
+                    <input type="radio" name="AllocateName" value="0" checked />
+                    全部
+                </label>
+                <label class="radio-inline" style="cursor:default">
+                    <input type="radio" name="AllocateName" value="A" />
+                    未分配
+                </label>
+                <label class="radio-inline" style="cursor:default">
+                    <input type="radio" name="AllocateName" value="B" />
+                    已分配
+                </label>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="input-group" id="div_imp_id" style="display:none;">
+            <span class="input-group-addon">计划</span>
+            <select class="form-control" id="select_plan_id" ></select>
+            <span class="input-group-addon">结果</span>
+            <select class="form-control" id="select_result_id"></select>
+        </div>
+    </div>
+</div>
+<div class="row gap-top">
+    <div class="col-md-4">
+        <div class="input-group">
+            <span class="input-group-addon title-xs"><font color="red">*</font>&nbsp;地区</span>
+            <select class="form-control" id="select_area_id"></select>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="input-group">
+            <span class="input-group-addon title-xs"><font color="red">*</font>&nbsp;经销商</span>
+            <select class="form-control readonly" id="select_distributor_id"></select>
+        </div>
+    </div>
+</div>
+<div class="row gap-top">
+    <div class="col-md-6 col-md-offset-6">
+        <div class="input-group" id="div_imp_id">
+            <span class="input-group-addon">VGIC代表</span>
+            <input type="text" class="form-control" id="input_vgic_id" maxlength="10" readonly/>
+            <span class="input-group-addon">Dealer代表</span>
+            <input type="text" class="form-control" id="input_dealer_id" maxlength="10" readonly/>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div id="Grid" class="col-md-12">
+        <table id="grid" class="ui-jqgrid-htable"></table>
+        <div id="pager" class="page">
+        </div>
+    </div>
+</div>
+    @section Scripts{
+        <!--Excel-->
+        <script src="../js/excel/FileSaver.js"></script>
+        <script src="../js/excel/jszip.min.js"></script>
+        <script src="../js/excel/xlsx.js"></script>
+        <!-- 1. Load -->
+        <script type="text/javascript">
+            var _grid, _gridName;
+            var _excelData;
+            $(document).ready(function () {
+                fn_Initial();
+                fn_GridInit();
+            });
+        </script>
+        <!-- 2. Init -->
+        <script type="text/javascript">
+            function fn_Initial() {
+                _gridName = 'grid';
+                _grid = $('#' + _gridName);
+                $(".form_datetime").datetimepicker({
+                    format: 'yyyy-mm-dd',
+                    language: 'zh-CN',
+                    minView: 2, //显示到具体日期，如果设置到1，则显示到具体时间点。
+                    autoclose: 1,
+                    todayHighlight: 1,
+                    todayBtn: 1,
+                    startView: 2, //开始页面设置为具体到日期的那个页面。
+                    pickerPosition: 'bottom-left'
+                });
+                $("#txtSDate").val("@ViewBag.FirstDay");
+                $("#txtEDate").val("@ViewBag.CurrentDate");
+                DateFormatCheckEvent("txtSDate", { CheckType: "BLANK" });
+                DateFormatCheckEvent("txtEDate", { CheckType: "BLANK" });
+                fn_InitialData();
+                fn_InitEvent();
+                if ('@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]' == 'D') {
+                    $("input[name='AllocateName']:eq(2)").attr("checked", "checked");
+                    $("#rdo_allocate_id").attr("disabled", true);
+                    $("input[name='AllocateName']").attr("disabled", true);
+                    $("#div_imp_id").show();
+                }
+            }
+        </script>
+        <!-- 3. InitData -->
+        <script type="text/javascript">
+            function fn_InitialData() {
+                var tc, st, p, r;
+                //任务种类
+                fn_GetStatus('16');
+                //来源类型
+                setTimeout(function () { fn_GetStatus('15') }, 500);
+                //计划
+                setTimeout(function () { fn_GetStatus('06') }, 500);
+                //结果
+                setTimeout(function () { fn_GetStatus('07') }, 500);
+                //地区、经销商
+                setTimeout(function () { fn_GetArea() }, 500);
+            }
+            function fn_GetStatus(groupcode) {
+               $.sa.get(TASKGETSTATUS, { GroupCode: groupcode },
+                      {
+                          "success": function (data) {
+                              var result = JSON.parse(data.body);
+                              if (groupcode == '16') {
+                                  $("#select_tctype_id").html(JsonToCboList("Name", "Value", result, { 'SelectType': 'ALL' }));
+                              }
+                              if (groupcode == '15') {
+                                  $("#select_sourcetype_id").html(JsonToCboList("Name", "Value", result, { 'SelectType': 'ALL' }));
+                                  }
+                              if (groupcode == '06') {
+                                  result.splice(0, 1);
+                                  $("#select_plan_id").html(JsonToCboList("Name", "Value", result, { 'SelectType': 'ALL' }));
+                              }
+                              if (groupcode == '07') {
+                                  $("#select_result_id").html(JsonToCboList("Name", "Value", result, { 'SelectType': 'ALL' }));
+                              }
+                          },
+                          "failure": function (data, statusText, jqXHR) {
+                              $("#callback_1_layer").html(data.msg);
+                          }
+                      }
+                      , $(".Grid")
+                      , { type: "spin" });
+
+            }
+            function fn_GetArea() {
+                $.sa.get(GETDISTRIBUTORBYUSERID,
+                { UserId: '@Context.Request.Cookies[SessionKeys.SESSION_USERID]' },
+                {
+                    "success": function (data) {
+                        if (data != null) {
+                            if ('@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]' == 'S'
+                                || '@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]' == 'D'
+                                || '@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]' == 'Z') {
+                                $('#select_area_id').html(JsonToCboList("Name", "Value", JSON.parse(data.body)));
+                            } else {
+                                $('#select_area_id').html(JsonToCboList("Name", "Value", JSON.parse(data.body), { "SelectType": "SELECT" }));
+                            }
+                            fn_GetDis();
+                        }
+                    },
+                    "failure": function (data, statusText, jqXHR) {
+                        $.sa.warning(data.msg);
+                    }
+                });
+            }
+            function fn_GetDis() {
+                var areaid = $("#select_area_id").val();
+                if (areaid == "select")
+                    $("#select_distributor_id").html(JsonToCboList("DisName", "DisId","", { 'SelectType': 'SELECT' }));
+                else
+                $.sa.get(GETDISTRIBUTORBYAREAID,
+                { AreaId: areaid, UserId: '@Context.Request.Cookies[SessionKeys.SESSION_USERID]', DisName: '' },
+                {
+                    "success": function (data) {
+                        $("#select_distributor_id").html(JsonToCboList("DisName", "DisId", eval(data.body), { 'SelectType': 'SELECT' }));
+
+                        if ('@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]' == 'S' || '@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]' == 'D') {
+                            $("#select_distributor_id").val('@Context.Request.Cookies[SessionKeys.SESSION_ORGSERVERID]');
+                            $("#select_area_id").attr("disabled", true);
+                            $("#select_distributor_id").attr("disabled", true);
+                        }
+                        var disid = $("#select_distributor_id").val();
+                        if(disid!="select"&disid!="")
+                            fn_GetDisInfo(disid);
+                    },
+                    "failure": function (data, statusText, jqXHR) {
+                        $("#callback_1_layer").html(data.msg);
+                    }
+                }
+                , $(".Grid")
+                , { type: "spin" });
+
+            }
+            function fn_GetDisInfo(disid) {
+                $.sa.get(GETINFOBYDISID,
+                { DisId: disid },
+                {
+                    "success": function (data) {
+                        var result = JSON.parse(data.body);
+                        if (result.length == 0) return;
+                        $("#input_vgic_id").val(result[0].AUserName);
+                        $("#input_dealer_id").val(result[0].DUserName);
+                    },
+                    "failure": function (data, statusText, jqXHR) {
+                        $("#callback_1_layer").html(data.msg);
+                    }
+                }
+                , $(".Grid")
+                , { type: "spin" });
+            }
+        </script>
+
+        <!--InitEvent-->
+        <script type="text/javascript">
+            function fn_InitEvent() {
+                $('input:radio[name="AllocateName"]').on('change', function () {
+                    var item = $("input[name='AllocateName']:checked").val();
+                    if (item == 'A' || item == '0') {
+                        $("#div_imp_id").hide();
+                    } else {
+                        $("#div_imp_id").show();
+                    }
+                    $("#select_plan_id").val('0');
+                    $("#select_result_id").val('0');
+                })
+                $("#select_plan_id").on('change', function () {
+                    var p = $("#select_plan_id").val();
+                    if (p != undefined & p != '0') {
+                        $("#select_result_id").val('0');
+                    } 
+                })
+                $("#select_result_id").on('change', function () {
+                    var r = $("#select_result_id").val();
+                    if (r != undefined & r != '0') {
+                        $("#select_plan_id").val('0');
+                    }
+                })
+                $('#btnSearch').on('click', function () {
+                    if (fn_SearchChk())
+                        fn_SearchData();
+                });
+                $("#select_area_id").on("change", function () {
+                    fn_GetDis();
+                });
+                $("#select_distributor_id").on("change", function () {
+                    var disid = $("#select_distributor_id").val();
+                    if (disid != "select" & disid != "")
+                        fn_GetDisInfo(disid);
+                });
+                $('#btnExcelUpload').on('click', function () {
+                    if (_excelData == undefined || _excelData == null || _excelData.length == 0)
+                        $.sa.warning("没有可下载的数据", {
+                            title: "警告！", fnClose: function () {
+                                $("#btnSearch").focus();
+                            }
+                        });
+                    else
+                    download();
+                });
+            }
+        </script>
+        <!--Grid-->
+        <script type="text/javascript">
+            function fn_GridInit() {
+                _grid.jqGrid({
+                    datatype: 'local',
+                    colModel: [
+                        {
+                            name: 'ItemId', label: '代码', width: 50, align: 'right',
+                            cellattr: function (rowId, val, rawObject, cm, rdata) {
+                                return 'class="readonlycell"';
+                            }
+                        },
+                        {
+                            name: 'TCKindName', label: '任务种类', width: 80, align: 'left',
+                            cellattr: function (rowId, val, rawObject, cm, rdata) {
+                                return 'class="readonlycell"';
+                            }
+                        },
+                        {
+                            name: 'ItemName', label: '改善项', width: 200, align: 'left',
+                            cellattr: function (rowId, val, rawObject, cm, rdata) {
+                                return 'class="readonlycell"';
+                            }
+                        },
+                        {
+                            name: 'ExecDepartmentName', label: '责任部门', width: 150, align: 'left',
+                            cellattr: function (rowId, val, rawObject, cm, rdata) {
+                                return 'class="readonlycell"';
+                            }
+                        },
+                        {
+                            name: 'ScoreRemark', label: '备注', width: 160, align: 'left',
+                            cellattr: function (rowId, val, rawObject, cm, rdata) {
+                                return 'class="readonlycell"';
+                            }
+                        },
+                        {
+                            name: 'ScoreDate', label: '打分时间', width: 120, align: 'center',
+                            cellattr: function (rowId, val, rawObject, cm, rdata) {
+                                return 'class="readonlycell"';
+                            }
+                        },
+                        {
+                            name: 'PlanApproalYN', label: '计划审批', width: 65, align: 'center', formatter: 'checkbox', formatoptions: { disabled: true }, editoptions: { value: 'True:False' },
+                            cellattr: function (rowId, val, rawObject, cm, rdata) {
+                                return 'class="readonlycell"';
+                            }
+                        },
+                        {
+                            name: 'ResultApproalYN', label: '结果审批', width: 65, align: 'center', formatter: 'checkbox', formatoptions: { disabled: true }, editoptions: { value: 'True:False' },
+                            cellattr: function (rowId, val, rawObject, cm, rdata) {
+                                return 'class="readonlycell"';
+                            }
+                        },
+                        {
+                            name: 'PlanFinishDate', label: '要求计划日期', width: 100, align: 'center',
+                            cellattr: function (rowId, val, rawObject, cm, rdata) {
+                                return 'class="readonlycell"';
+                            }
+                        },
+                        {
+                            name: 'ResultFinishDate', label: '要求结果日期', width: 100, align: 'center',
+                            cellattr: function (rowId, val, rawObject, cm, rdata) {
+                                return 'class="readonlycell"';
+                            }
+                        },
+                        {
+                            name: 'StatusName', label: '状态', width: 120, align: 'center',
+                            cellattr: function (rowId, val, rawObject, cm, rdata) {
+                                return 'class="readonlycell"';
+                            }
+                        },
+                        {
+                            name: 'SourceTypeName', label: '来源', width: 80, align: 'center',
+                            cellattr: function (rowId, val, rawObject, cm, rdata) {
+                                return 'class="readonlycell"';
+                            }
+                        },
+                        {
+                            name: '', label: '分配', width: 86, align: 'center',
+                            cellattr: function (rowId, val, rawObject, cm, rdata) {
+                                return 'class="readonlycell"';
+                            },
+                            formatter: fn_AllocateDetail, unformat: fn_UnAllocateDetail
+                        },
+                        {
+                            name: '', label: '计划', width: 80, align: 'center',
+                            cellattr: function (rowId, val, rawObject, cm, rdata) {
+                                return 'class="readonlycell"';
+                            },
+                            formatter: fn_PlanDetail, unformat: fn_UnPlanDetail
+                        },
+                        {
+                            name: '', label: '结果', width: 80, align: 'center',
+                            cellattr: function (rowId, val, rawObject, cm, rdata) {
+                                return 'class="readonlycell"';
+                            },
+                            formatter: fn_ResultDetail, unformat: fn_UnResultDetail
+                        },
+                        {
+                            name: 'TPId', hidden: true
+                        },
+                        {
+                            name: 'ImpId', hidden: true
+                        },
+                        {
+                            name: 'ImpResultId', hidden: true
+                        },
+                        {
+                            name: 'StausCode', hidden: true
+                        },
+                        {
+                            name: 'StatusType', hidden: true
+                        },
+                        {
+                            name: 'AllocateYN', hidden: true
+                        }
+                    ],
+                    width: $('#Grid').width(),
+                    height: 'auto',
+                    shrinkToFit: false,
+                    autoScroll: true,
+                    rownumbers: true,
+                    rownumWidth: 50,
+                    rowNum: 15,
+                    rowList: [15, 30, 45],
+                    footerrow: false,
+                    cellsubmit: 'clientArray',
+                    pager: jQuery('#pager'),
+                    cellEdit: true,
+                    editurl: 'clientArray',
+                    viewrecords: true,
+                    afterInsertRow: function (rowid, r) {
+                    },
+                    gridComplete: function (id) {
+                        var rowNum = parseInt($(this).getGridParam("records"), 50);
+                        if (rowNum > 0) {
+                            $(".ui-jqgrid-sdiv").show();
+                        }
+                        else {
+                            $(".ui-jqgrid-sdiv").hide();
+                        }
+
+                        //fix the pager position
+                        $('#pager_left').css('width', '25%');
+                        $('#pager_right').css('width', '25%');
+
+                        $("[aria-describedby='grid_rn']").addClass("readonlycell");
+                    }
+                });
+            }
+            function fn_SetGrid(mydata) {
+                mydata = mydata || [];
+                _grid.clearGridData()
+                .setGridParam({
+                    data: mydata
+                }).trigger('reloadGrid');
+            }
+            ///详细按钮
+            function fn_AllocateDetail(cellvalue, options, rowObject) {
+                var allocateStatus = rowObject.StatusType == "Allocate" || rowObject.StatusType == "Plan" ? rowObject.StatusCode : '';
+                return '<button type="button" class="btn btn-primary btn-sm jqgridbuttonwidth"  onclick="fn_GetAllocateDetail(' + rowObject.ImpId + ',' + "'" + allocateStatus + "'" + ',' + rowObject.TPId + ',' + rowObject.ItemId + ',' + rowObject.PlanApproalYN + ',' + rowObject.ResultApproalYN + ')">详细/分配</button>';
+            }
+
+            function fn_UnAllocateDetail(cellvalue, options, rowObject) {
+                return "";
+            }
+            function fn_GetAllocateDetail(improvementId, planStatus, tpId, itemId, planApproalYN, resultApproalYN) {
+                $.sa.pop("/Improve/IMP010P", {
+                    params: { 'pamImprovementId': improvementId, 'pamPlanStatus': planStatus, 'pamTPId': tpId, 'pamItemId': itemId, 'pamPlanApproalYN': planApproalYN, 'pamResultApproalYN': resultApproalYN }, width: '1000px', height: '520px', title: '<span class="fa fa-hand-o-right gap-icon-right"></span><span>详细/分配</span>'
+                , popcallback: function () {
+                    fn_Refresh(_grid.getGridParam('page'));
+                }
+                });
+            }
+            ///详细按钮
+            function fn_PlanDetail(cellvalue, options, rowObject) {
+                var planStatus = rowObject.StatusType == "Result" ? 'G' : rowObject.StatusCode;
+                return '<button type="button" class="btn btn-primary btn-sm jqgridbuttonwidth"  onclick="fn_GetApprovalDetail(' + rowObject.ImpId + ',' + "'" + planStatus + "'" + ',' + rowObject.PlanApproalYN + ',' + rowObject.AllocateYN + ')">改善计划</button>';
+            }
+
+            function fn_UnPlanDetail(cellvalue, options, rowObject) {
+                return "";
+            }
+            function fn_GetApprovalDetail(improvementId, planStatus, planApproalYN, allocateYN) {
+                $.sa.pop("/Improve/IMP020P", {
+                    params: { 'pamImprovementId': improvementId, 'pamPlanStatus': planStatus, 'pamPlanApproalYN': planApproalYN, 'pamAllocateYN': allocateYN }, width: '800px', height: '520px', title: '<span class="fa fa-hand-o-right gap-icon-right"></span><span>改善计划</span>'
+                , popcallback: function () {
+                    fn_Refresh(_grid.getGridParam('page'));
+                }
+                });
+            }
+            ///详细按钮
+            function fn_ResultDetail(cellvalue, options, rowObject) {
+                var resultStatus = rowObject.StatusType == "Result" ? rowObject.StatusCode : '';
+                return '<button type="button" class="btn btn-primary btn-sm jqgridbuttonwidth"  onclick="fn_GetResultDetail(' + rowObject.ImpId + ',' + rowObject.ImpResultId + ',' + "'" + resultStatus + "'" + ',' + rowObject.ResultApproalYN + ',' + rowObject.AllocateYN + ')">改善结果</button>';
+            }
+
+            function fn_UnResultDetail(cellvalue, options, rowObject) {
+                return "";
+            }
+            function fn_GetResultDetail(improvementId, impResultId, resultStatus, resultApproalYN, allocateYN) {
+                $.sa.pop("/Improve/IMP030P", {
+                    params: { 'pamImprovementId': improvementId, 'pamImpResultId': impResultId, 'pamResultStatus': resultStatus, 'pamResultApproalYN': resultApproalYN, 'pamAllocateYN': allocateYN }, width: '800px', height: '520px', title: '<span class="fa fa-hand-o-right gap-icon-right"></span><span>改善结果</span>'
+                , popcallback: function () {
+                    fn_Refresh(_grid.getGridParam('page'));
+                }
+                });
+            }
+
+            function fn_Refresh(page) {
+                fn_SearchData(page);
+            }
+        </script>
+        <!--Search-->
+        <script type="text/javascript">
+            function fn_SearchChk() {
+                var isValiA = true;
+                var isValiB = true;
+                var isValiC = true;
+                var isVali = true;
+                if ($("#txtSDate").val() > $("#txtEDate").val()) {
+                    isValiA = false;
+                }
+                if ($.trim($("#select_area_id").val()) == "" || $.trim($("#select_area_id").val()) == "select") {
+                    isValiB = false;
+                }
+                if ($.trim($("#select_distributor_id").val()) == "" || $.trim($("#select_distributor_id").val()) == "select") {
+                    isValiC = false;
+                }
+                if (!isValiA) {
+                    $.sa.warning("结束日期不能小于开始日期", {
+                        title: "警告！", fnClose: function () {
+                            $("#txtEDate").focus();
+                        }
+                    });
+                } else if (!isValiB) {
+                    $.sa.warning("请选择地区", {
+                        title: "警告！", fnClose: function () {
+                            $("#select_area_id").focus();
+                        }
+                    });
+                } else if (!isValiC) {
+                    $.sa.warning("请选择经销商", {
+                        title: "警告！", fnClose: function () {
+                            $("#select_distributor_id").focus();
+                        }
+                    });
+                }
+                isVali = isValiA & isValiB & isValiC;
+                return isVali;
+            }
+            function fn_SearchData(page) {
+                $.sa.get(GETIMPITEMFROMSCORE, {
+                    'sDate': $.trim($("#txtSDate").val().replace(/-/g, ""))
+                    , 'eDate': $.trim($("#txtEDate").val().replace(/-/g, ""))
+                    , 'tcKind': $.trim($("#select_tctype_id").val())
+                    , 'sourceType': $.trim($("#select_sourcetype_id").val())
+                    , 'itemName': $.trim($("#input_itemname_id").val())
+                    , 'aStatus': $("input[name='AllocateName']:checked").val()
+                    , 'pStatus': $.trim($("#select_plan_id").val())
+                    , 'rStatus': $.trim($("#select_result_id").val())
+                    , 'sDisId': $.trim($("#select_distributor_id").val())
+                    , 'inUserId': '@Context.Request.Cookies[SessionKeys.SESSION_USERID]'
+                    , 'userType': '@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]'
+                },
+                           {
+                               "success": function (data) {
+                                   if (data.resultCode == 0) {
+                                       var resultList = JSON.parse(data.body);
+                                       if (resultList.length == 0) {
+                                           _grid.jqGrid("clearGridData");
+                                           $.sa.alert('查询没有数据');
+                                       } else {
+                                           fn_SetGrid(resultList);
+                                           _excelData = [];
+                                           var head = {
+                                               "SeqNo":"序号",
+                                               "ItemName": "改善项",
+                                               "ScoreRemark": "备注",
+                                               "PlanApproalYN": "计划审批",
+                                               "ResultApproalYN": "结果审批",
+                                               "PlanFinishDate": "要求计划日期",
+                                               "ResultFinishDate": "要求结果日期",
+                                               "SourceTypeName": "来源"
+                                           };
+                                           _excelData.push(head);
+                                           $.each(resultList, function (x, o) {
+                                               var obj = {};
+                                               obj.SeqNo = x+1;
+                                               obj.ItemName = o.ItemName;
+                                               obj.ScoreRemark = o.ScoreRemark;
+                                               obj.PlanApproalYN = o.PlanApproalYN==true?"是":"否";
+                                               obj.ResultApproalYN = o.ResultApproalYN == true ? "是" : "否";
+                                               obj.PlanFinishDate = o.PlanFinishDate;
+                                               obj.ResultFinishDate = o.ResultFinishDate;
+                                               obj.SourceTypeName = o.SourceTypeName;
+                                               _excelData.push(obj);
+                                           })
+                                           $.sa.alert('查询完毕', { maxWidth: '400px', minWidth: '300px', showClose: false });
+                                       }
+                                   } else {
+                                       $.sa.alert(data.msg);
+                                   }
+                                   if (page > 0) {
+                                       _grid.jqGrid('setGridParam', {
+                                           page: page
+                                       }).trigger("reloadGrid");
+                                   }
+                               },
+                               "failure": function (data, statusText, jqXHR) {
+                                   $("#callback_1_layer").html(data.msg);
+                               }
+                           }
+                           , $("body"));
+            }
+        </script>
+        <script type="text/javascript">
+            function download() {
+                var file = new xlsx.File();
+                var sheet = file.addSheet('ImprovementItem');
+                var data = [
+                  ['Auto', 200, 90, 'B2-C2'],
+                  ['Entertainment', 200, 32, 'B3-C3'],
+                  ['Food', 350, 205.75, 'B4-C4'],
+                  ['Home', 300, 250, 'B5-C5'],
+                  ['Medical', 100, 35, 'B6-C6'],
+                  ['Personal Items', 300, 80, 'B7-C7'],
+                  ['Travel', 500, 350, 'B8-C8'],
+                  ['Utilities', 200, 100, 'B9-C9'],
+                  ['Other', 50, 60, 'B10-C11']
+                ];
+
+                function border(cell, top, left, bottom, right) {
+                    //var light = 'ffded9d4';
+                    //var dark = 'ff7e6a54';
+                    //cell.style.border.top = 'thin';
+                    //cell.style.border.topColor = top ? dark : light;
+                    //cell.style.border.left = 'thin';
+                    //cell.style.border.leftColor = left ? dark : light;
+                    //cell.style.border.bottom = 'thin';
+                    //cell.style.border.bottomColor = bottom ? dark : light;
+                    //cell.style.border.right = 'thin';
+                    //cell.style.border.rightColor = right ? dark : light;
+                }
+                function setborder(cell) {
+                    hc.style.applyBorder = true;
+                    cell.style.border.top = 'medium';
+                    cell.style.border.topColor = 'ff000000';
+                    cell.style.border.left = 'medium';
+                    cell.style.border.leftColor = 'ff000000';
+                    cell.style.border.bottom = 'medium';
+                    cell.style.border.bottomColor = 'ff000000';
+                    cell.style.border.right = 'medium';
+                    cell.style.border.rightColor = 'ff000000';
+                }
+
+                function fill(cell, type) {
+                    type = type || 0;
+                    var colors = ['ffffffff', 'ffa2917d', 'ffe4e2de', 'fffff8df', 'fff1eeec', '74a3d2'];
+                    // 1: header, 2: first col, 3: second col, 4: gray, 0: white
+                    cell.style.fill.patternType = 'solid';
+                    cell.style.fill.fgColor = colors[type];
+                    cell.style.fill.bgColor = 'ffffffff';
+                }
+
+                var header0 = sheet.addRow();
+                header0.setHeightCM(1.8);
+                //header0.isCustom = true;
+                var hc = header0.addCell();
+                hc.value ="待改善事项";
+                hc.style.align.v = 'center';
+                hc.style.align.h = 'center';
+                hc.style.align.wrapText = true;
+                hc.style.align.shrinkToFit = true;
+                hc.hMerge = 7;
+                hc.style.font.color = '#555555';
+                hc.style.font.size = 12;
+                hc.style.font.bold = true;
+                hc.style.font.name = "Microsoft YaHei";
+                setborder(hc);
+                fill(hc, 5)
+
+                var header1 = sheet.addRow();
+                //header1.setHeightCM(1.2);
+                header1.isCustom = false;
+                var hrow1 = ['登记期间', $("#txtSDate").val() + "-" + $("#txtEDate").val(), '任务种类', $("#select_tctype_id>option:selected").text(), '来源类型', $("#select_sourcetype_id>option:selected").text()];
+                for (var i = 0; i < hrow1.length; i++) {
+                    var hc = header1.addCell();
+                    hc.value = hrow1[i];
+                    hc.style.align.v = 'center';
+                    hc.style.align.wrapText = true;
+                    hc.style.align.shrinkToFit = true;
+                    if (i == 3 || i == 5) {
+                       hc.hMerge = 1;
+                       var c = header1.addCell();
+                       //c.width = 4;
+                       setborder(c);
+                   } 
+                   else {
+                       hc.hMerge = 0;
+                    }
+                    //if (i == 0)
+                    //    hc.width = 4;
+                    //else if (i == 1)
+                    //    hc.width = 15;
+                    //else if (i == 2)
+                    //    hc.width = 15;
+                    //else if (i == 3)
+                    //    hc.width = 4;
+                    //else if (i == 4||i==5)
+                    //    hc.width=8
+                    hc.style.font.name = "Microsoft YaHei";
+                    if (i == 0 || i == 2 || i == 4) {
+                        hc.style.align.h = 'center';
+                        hc.style.font.bold = true;
+                    }
+                    else {
+                        hc.style.align.h = 'left';
+                    }
+                    hc.style.font.size = 10;
+                    hc.style.font.color = '#555555';
+
+                    if (i == 0 || i == 2 || i == 4)
+                        fill(hc, 5)
+                    //else
+                        //fill(hc, 3);
+                    setborder(hc);
+                }
+
+                var header2 = sheet.addRow();
+                //header2.setHeightCM(1.2);
+                header2.isCustom = false;
+                var hrow2 = [];
+                var selectedItem = "";
+                if ($('#rdo_allocate_id input:radio:checked').val() == "B") {
+                    hrow2 = ['改善项', $("#input_itemname_id").val(), '分配状态', $.trim($("input[name='AllocateName']:checked").parent().text()), $("#select_plan_id>option:selected").text(), $("#select_result_id>option:selected").text()];
+                    selectedItem = "B";
+                }
+                else {
+                    hrow2 = ['改善项', $("#input_itemname_id").val(), '分配状态', $.trim($("input[name='AllocateName']:checked").parent().text()),'',''];
+                }
+                for (var i = 0; i < hrow2.length; i++) {
+                    var hc = header2.addCell();
+                    hc.value = hrow2[i];
+                    hc.style.align.v = 'center';
+                    hc.style.align.wrapText = true;
+                    hc.style.align.shrinkToFit = true;
+                    if (i == 3 || i == 5) {
+                        hc.hMerge = 1;
+                        var c = header2.addCell();
+                        //c.width = 4;
+                        setborder(c);
+                    } 
+                    else {
+                        hc.hMerge = 0;
+                    }
+                    //if (i == 0)
+                    //    hc.width = 4;
+                    //else if (i == 1)
+                    //    hc.width = 15;
+                    //else if (i == 2)
+                    //    hc.width = 15;
+                    //else if (i == 3)
+                    //    hc.width = 4;
+                    //else if (i == 4 || i == 5)
+                    //    hc.width = 8
+                    hc.style.font.color = '#555555';
+                    hc.style.font.name = "Microsoft YaHei";
+                    if (i == 0 || i == 2 || i == 4) {
+                        hc.style.font.bold = true;
+                        hc.style.align.h = 'center';
+                    }
+                    else {
+                        hc.style.align.h = 'left';
+                    }
+                    hc.style.font.size = 10;
+                    if (i == 0 || i == 2 )
+                        fill(hc, 5)
+                    //else
+                        //fill(hc, 3);
+                    setborder(hc);
+                }
+
+                var header3 = sheet.addRow();
+                header3.setHeightCM(1.2);
+                //header3.isCustom = false;
+                var hrow3 = ['地区', $("#select_area_id>option:selected").text(), '经销商', $("#select_distributor_id>option:selected").text(), '操作者', $("body div span.accountName").text()];
+                for (var i = 0; i < hrow3.length; i++) {
+                    var hc = header3.addCell();
+                    hc.value = hrow3[i];
+                    hc.style.align.v = 'center';
+                    hc.style.align.wrapText = true;
+                    hc.style.align.shrinkToFit = true;
+                    if (i == 3||i==5 ) {
+                        hc.hMerge = 1;
+                        var c = header3.addCell();
+                        //c.width = 4;
+                        setborder(c);
+                    } 
+                    else {
+                        hc.hMerge = 0;
+                    }
+                    //if (i == 0)
+                    //    hc.width = 4;
+                    //else if (i == 1)
+                    //    hc.width = 15;
+                    //else if (i == 2)
+                    //    hc.width = 15;
+                    //else if (i == 3)
+                    //    hc.width = 4;
+                    //else if (i == 4 || i == 5)
+                    //    hc.width = 8
+                    hc.style.font.color = '#555555';
+                    hc.style.font.name = "Microsoft YaHei";
+                    if (i == 0 || i == 2 || i == 4) {
+                        hc.style.font.bold = true;
+                        hc.style.align.h = 'center';
+                    }
+                    else {
+                        hc.style.align.h = 'left';
+                    }
+                    hc.style.font.size = 10;
+                    if (i == 0 || i == 2||i==4)
+                        fill(hc, 5)
+                    //else
+                        //fill(hc, 3);
+                    setborder(hc);
+                }
+                var r = sheet.addRow()
+                r.setHeightCM(1.2);
+                var rc = r.addCell();
+                rc.hMerge = 7;
+
+                data = _excelData;
+                var len = data.length;
+                for (var i = 0; i < len; i++) {
+                    var line = data[i];
+                    var row = sheet.addRow();
+                    //row.setHeightCM(1.2);
+                    row.isCustom = false;
+                    var cell0 = row.addCell();
+                    cell0.value = line.SeqNo;
+                    cell0.style.align.v = 'center';
+                    cell0.style.align.h = 'center';
+                    cell0.style.align.wrapText = true;
+                    cell0.style.align.shrinkToFit = true;
+                    //if (i === 0) {
+                    //    border(cell0, 1, 0, 0, 1);
+                    //} else if (i === len - 1) {
+                    //    border(cell0, 0, 0, 1, 1);
+                    //} else {
+                    //    border(cell0, 0, 0, 0, 1);
+                    //}
+                    //border(cell0, 1, 1, 1, 1);
+                    cell0.style.font.name = "Microsoft YaHei";
+                    if (i == 0){
+                        cell0.style.font.bold = true;
+                        fill(cell0, 5);
+                    }
+                    else {
+                        //fill(cell0, i % 2 === 0 ? 0 : 4);
+                    }
+                    if (i == 0)
+                        cell0.style.font.size = 10;
+                    else
+                         cell0.style.font.size = 9;
+                    //cell0.width = 4;
+                    setborder(cell0);
+                   
+                    var cell3 = row.addCell();
+                    cell3.value = line.ItemName;
+                    cell3.style.align.v = 'center';
+                    cell3.style.align.h = 'left';
+                    cell3.style.align.wrapText = true;
+                    cell3.style.align.shrinkToFit = true;
+                    //if (i === 0) {
+                    //    border(cell3, 1, 0, 0, 1);
+                    //} else if (i === len - 1) {
+                    //    border(cell3, 0, 0, 1, 1);
+                    //} else {
+                    //    border(cell3, 0, 0, 0, 1);
+                    //}
+                    //border(cell3, 1, 1, 1, 1);
+                    cell3.style.font.name = "Microsoft YaHei";
+                    if (i == 0) {
+                        cell3.style.font.bold = true;
+                        fill(cell3, 5);
+                    }
+                    else {
+                        //fill(cell3, i % 2 === 0 ? 0 : 4);
+                    }
+                    if (i == 0)
+                        cell3.style.font.size = 10;
+                    else
+                        cell3.style.font.size = 9;
+                    //cell3.width = 15;
+                    setborder(cell3);
+
+                    var cell4 = row.addCell();
+                    cell4.value = line.ScoreRemark;
+                    cell4.style.align.v = 'center';
+                    cell4.style.align.h = 'left';
+                    cell4.style.align.wrapText = true;
+                    cell4.style.align.shrinkToFit = true;
+                    //if (i === 0) {
+                    //    border(cell4, 1, 0, 0, 1);
+                    //} else if (i === len - 1) {
+                    //    border(cell4, 0, 0, 1, 1);
+                    //} else {
+                    //    border(cell4, 0, 0, 0, 1);
+                    //}
+                    //border(cell4, 1, 1, 1, 1);
+                    cell4.style.font.name = "Microsoft YaHei";
+                    if (i == 0) {
+                        cell4.style.font.bold = true;
+                        fill(cell4, 5);
+                    }
+                    else {
+                        //fill(cell4, i % 2 === 0 ? 0 : 4);
+                    }
+                    cell4.style.font.size = 9;
+                    if (i == 0)
+                        cell4.style.font.size = 10;
+                    else
+                        cell4.style.font.size = 9;
+                    //cell4.width = 15;
+                    setborder(cell4);
+
+                   
+
+                    var cell6 = row.addCell();
+                    cell6.value = line.PlanApproalYN;
+                    cell6.style.align.v = 'center';
+                    cell6.style.align.h = 'center';
+                    cell6.style.align.wrapText = true;
+                    cell6.style.align.shrinkToFit = true;
+                    //if (i === 0) {
+                    //    border(cell6, 1, 0, 0, 1);
+                    //} else if (i === len - 1) {
+                    //    border(cell6, 0, 0, 1, 1);
+                    //} else {
+                    //    border(cell6, 0, 0, 0, 1);
+                    //}
+                    //border(cell6, 1, 1, 1, 1);
+                    cell6.style.font.name = "Microsoft YaHei";
+                    if (i == 0) {
+                        cell6.style.font.bold = true;
+                        fill(cell6, 5);
+                    }
+                    else {
+                        //fill(cell6, i % 2 === 0 ? 0 : 4);
+                    }
+                    cell6.style.font.size = 9;
+                    if (i == 0)
+                        cell6.style.font.size = 10;
+                    else
+                        cell6.style.font.size = 9;
+                    //cell6.width = 4;
+                    setborder(cell6);
+
+                    var cell7 = row.addCell();
+                    cell7.value = line.ResultApproalYN;
+                    cell7.style.align.v = 'center';
+                    cell7.style.align.h = 'center';
+                    cell7.style.align.wrapText = true;
+                    cell7.style.align.shrinkToFit = true;
+                    //if (i === 0) {
+                    //    border(cell7, 1, 0, 0, 1);
+                    //} else if (i === len - 1) {
+                    //    border(cell7, 0, 0, 1, 1);
+                    //} else {
+                    //    border(cell7, 0, 0, 0, 1);
+                    //}
+                    //border(cell7, 1, 1, 1, 1);
+                    cell7.style.font.name = "Microsoft YaHei";
+                    if (i == 0) {
+                        cell7.style.font.bold = true;
+                        fill(cell7, 5);
+                    }
+                    else {
+                        //fill(cell7, i % 2 === 0 ? 0 : 4);
+                    }
+                    cell7.style.font.size = 9;
+                    //cell7.width = 4;
+                    if (i == 0)
+                        cell7.style.font.size = 10;
+                    else
+                        cell7.style.font.size = 9;
+                    setborder(cell7);
+
+                    var cell8 = row.addCell();
+                    cell8.value = line.PlanFinishDate;
+                    cell8.style.align.v = 'center';
+                    cell8.style.align.h = 'center';
+                    cell8.style.align.wrapText = true;
+                    cell8.style.align.shrinkToFit = true;
+                    //if (i === 0) {
+                    //    border(cell8, 1, 0, 0, 1);
+                    //} else if (i === len - 1) {
+                    //    border(cell8, 0, 0, 1, 1);
+                    //} else {
+                    //    border(cell8, 0, 0, 0, 1);
+                    //}
+                    //border(cell8, 1, 1, 1, 1);
+                    cell8.style.font.name = "Microsoft YaHei";
+                    if (i == 0) {
+                        cell8.style.font.bold = true;
+                        fill(cell8, 5);
+                    }
+                    else {
+                        //fill(cell8, i % 2 === 0 ? 0 : 4);
+                    }
+                    cell8.style.font.size = 9;
+                    //cell8.width = 8;
+                    if (i == 0)
+                        cell8.style.font.size = 10;
+                    else
+                        cell8.style.font.size = 9;
+                    setborder(cell8);
+
+                    var cell9 = row.addCell();
+                    cell9.value = line.ResultFinishDate;
+                    cell9.style.align.v = 'center';
+                    cell9.style.align.h = 'center';
+                    cell9.style.align.wrapText = true;
+                    cell9.style.align.shrinkToFit = true;
+                    //if (i === 0) {
+                    //    border(cell9, 1, 0, 0, 1);
+                    //} else if (i === len - 1) {
+                    //    border(cell9, 0, 0, 1, 1);
+                    //} else {
+                    //    border(cell9, 0, 0, 0, 1);
+                    //}
+                    //border(cell9, 1, 1, 1, 1);
+                    cell9.style.font.name = "Microsoft YaHei";
+                    if (i == 0) {
+                        cell9.style.font.bold = true;
+                        fill(cell9, 5);
+                    }
+                    else {
+                        //fill(cell9, i % 2 === 0 ? 0 : 4);
+                    }
+                    cell9.style.font.size = 9;
+                    //cell9.width = 8;
+                    if (i == 0)
+                        cell9.style.font.size = 10;
+                    else
+                        cell9.style.font.size = 9;
+                    setborder(cell9);
+
+                   
+
+                    var cell11 = row.addCell();
+                    cell11.value = line.SourceTypeName;
+                    cell11.style.align.v = 'center';
+                    cell11.style.align.h = 'center';
+                    cell11.style.align.wrapText = true;
+                    cell11.style.align.shrinkToFit = true;
+                    //if (i === 0) {
+                    //    border(cell11, 1, 0, 0, 1);
+                    //} else if (i === len - 1) {
+                    //    border(cell11, 0, 0, 1, 1);
+                    //} else {
+                    //    border(cell11, 0, 0, 0, 1);
+                    //}
+                    //border(cell11, 1, 1, 1, 1);
+                    cell11.style.font.name = "Microsoft YaHei";
+                    if (i == 0) {
+                        cell11.style.font.bold = true;
+                        fill(cell11, 5);
+                    }
+                    else {
+                       // fill(cell11, i % 2 === 0 ? 0 : 4);
+                    }
+                    cell11.style.font.size = 9;
+                    //cell11.width = 4;
+                    if (i == 0)
+                        cell11.style.font.size = 10;
+                    else
+                        cell11.style.font.size = 9;
+                    setborder(cell11);
+                }
+
+                for (var i = 0; i < 8; i++) {
+                    if (i == 0 || i == 3 || i == 4 || i == 7)
+                        sheet.col(i).width = 4;
+                    else if (i == 1)
+                        sheet.col(i).width = 17;
+                    else if (i == 2)
+                        sheet.col(i).width = 11;
+                    else
+                        sheet.col(i).width = 9;
+                    //if (i == 2 || i == 3) sheet.col(i).width =60;
+                }
+                var now = $("#select_distributor_id>option:selected").text() + "_" + "巡检待改善报告" + ".xlsx";
+                file
+                  .saveAs('blob')
+                  .then(function (content) {
+                      saveAs(content, now);
+                  });
+            }
+        </script>
+    }
+
+

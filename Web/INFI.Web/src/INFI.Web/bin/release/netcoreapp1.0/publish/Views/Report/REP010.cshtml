@@ -1,0 +1,850 @@
+﻿@{
+    Layout = "_LayoutMenu";
+    ViewData["Title"] = "报告查看";
+}
+@section HeadCss{
+    <style>
+        #txtSDate.datewidth, #txtEDate.datewidth {
+            width: 48.5%;
+        }
+
+        .datemargin {
+            margin-left: 3%;
+            margin-top: -1.4em;
+        }
+
+        .gap-icon {
+            margin-right: 5px;
+        }
+
+        .jqgridbuttonwidth {
+            width: 90%;
+        }
+
+        .decoration {
+            background-image: url('/images/x.gif');
+            background-repeat: no-repeat;
+            font-style: italic;
+            background-size: 100% 100%;
+        }
+
+        .dotdotdot {
+            display: inline-block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 260px;
+            line-height: 20px;
+        }
+    </style>
+}
+@section Scripts{
+    <script src="~/lib/crypto1/crypto/crypto.js"></script>
+    <script src="~/lib/crypto1/hmac/hmac.js"></script>
+    <script src="~/lib/crypto1/sha1/sha1.js"></script>
+    <script src="~/lib/base64.js"></script>
+    <script src="~/lib/plupload-2.1.9/js/plupload.full.min.js"></script>
+    <script src="~/js/upload.js"></script>
+    <script src="~/lib/lightbox2/js/lightbox-2.6.min.js"></script>
+    <script src="~/lib/spin.js"></script>
+    <link href="~/lib/lightbox2/css/lightbox.css" rel="stylesheet" />
+    <!-- 1. Load -->
+    <script type="text/javascript">
+        var _grid, _gridName;
+        var _execute;
+        $(document).ready(function () {
+            fn_Initial();
+            fn_InitialData();
+            fn_SetButtonStatus();
+            fn_GridInit1();
+        });
+    </script>
+    <!-- 2. Init -->
+    <script type="text/javascript">
+        function fn_Initial() {
+            _gridName = 'grid';
+            _grid = $('#' + _gridName);
+            $(".form_datetime").datetimepicker({
+                format: 'yyyy-mm-dd',
+                language: 'zh-CN',
+                minView: 2, //显示到具体日期，如果设置到1，则显示到具体时间点。
+                autoclose: 1,
+                todayHighlight: 1,
+                todayBtn: 1,
+                startView: 2, //开始页面设置为具体到日期的那个页面。
+                pickerPosition: 'bottom-left'
+            });
+            $("#txtSDate").val("@ViewBag.FirstDay");
+            $("#txtEDate").val("@ViewBag.CurrentDate");
+            DateFormatCheckEvent("txtSDate", { CheckType: "BLANK" });
+            DateFormatCheckEvent("txtEDate", { CheckType: "BLANK" });
+
+            $('#btnSearch').on('click', function () {
+                if (fn_SearchChk()) {
+                    if ($("#selSourceType").val() == "D") {
+                        fn_Search();
+                    } else {
+                        fn_SearchData();
+                    }
+
+                }
+
+            });
+
+            $("#btnSave").on("click", function () {
+                fn_Save();
+            });
+            $("#btnDelete").on("click", function () {
+                fn_Delrow();
+            });
+            $("#selSourceType").on("change", function () {
+                fn_changeGrid();
+            })
+
+        }
+    </script>
+    <!-- 3. InitData -->
+    <script type="text/javascript">
+        function fn_InitialData() {
+            $.sa.get(TASKGETSTATUS, { GroupCode: '15' },
+                {
+                    "success": function (data) {
+                        var data = JSON.parse(data.body);
+                        data.sort(function (a, b) {
+                            if (a.Value > b.Value) {
+                                return -1;
+                            } else {
+                                return 1;
+                            }
+                        });
+                        _execute = NameValueListToJson('Name', 'Value', data);
+                        $("#selSourceType").html(JsonToCboList("Name", "Value", data, {}));
+                        fn_GridInit();
+                        if ($("#selSourceType").val() == "D") {
+                            $("#btnSave").addClass("hidden");
+                            $("#btnDelete").addClass("hidden");
+                            $("#divUpload").addClass("hidden");
+                            $("#distributor_id").removeClass("hidden");
+                            $("#select_distributor_id").val("0");
+                            $("#divgrid").addClass("hidden");
+                            $("#divgrid1").removeClass("hidden");
+                        } else {
+                            if ('@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]' == "A" || '@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]' == "R") {
+                                $("#btnSave").removeClass("hidden");
+                                $("#btnDelete").removeClass("hidden");
+                                $("#divUpload").removeClass("hidden");
+                            }
+                            $("#distributor_id").addClass("hidden");
+                            $("#select_distributor_id").val("0");
+                            $("#divgrid1").addClass("hidden");
+                            $("#divgrid").removeClass("hidden");
+                        }
+                    },
+                    "failure": function (data, statusText, jqXHR) {
+
+                    }
+                }
+                , $(".Grid")
+                , { type: "spin" });
+            $.sa.get(SEARCHNOTIFIDIS, { UserId: '@Context.Request.Cookies[SessionKeys.SESSION_USERID]' },
+                             {
+                                 "success": function (data) {
+                                     $("#select_distributor_id").html(JsonToCboList("DisName", "DisId", eval(data.body), { 'SelectType': 'ALL' }));
+
+                                 },
+                                 "failure": function (data, statusText, jqXHR) {
+                                     $("#callback_1_layer").html(data.msg);
+                                 }
+                             }
+                             , $(".Grid")
+                             , { type: "spin" });
+        }
+    </script>
+
+    <!-- 4. Custom Function -->
+    <script type="text/javascript">
+        function fn_Save() {
+            if (!fn_ValidateBeforeSave()) {
+                return;
+            }
+            var editData = _grid.getChangedCells('all');
+            var attachList = [];
+            for (var i = 0; i < editData.length; i++) {
+                var data = { AttachName: editData[i].AttachName, Code: editData[i].Code, Url: editData[i].Url, DisCode: editData[i].DisCode, GRUD: editData[i].GRUD, Id: editData[i].Id == "" ? 0 : editData[i].Id };
+                attachList.push(data);
+            }
+            var saveData = { AttachList: attachList, UserId: "@Context.Request.Cookies[SessionKeys.SESSION_USERID]" };
+            //$.sa.post("http://10.202.101.144:6505/infi/api/v1/Report/SaveReportAttachment",
+            $.sa.post(SAVEREPORTATTACHMENT,
+                 JSON.stringify(saveData),
+                 {
+                     "success": function (data) {
+                         $.sa.alert('保存成功！');
+                         fn_SearchData();
+                     },
+                     "failure": function (data) {
+                         $.sa.alert("保存失败");
+                     }
+                 }, $("body"));
+        }
+
+        function fn_PreviewFile(cellvalue, options, rowObject) {
+            var previewPath = rowObject.Url;
+            if (rowObject.AttachName.substr(rowObject.AttachName.lastIndexOf(".")) == ".gif" || rowObject.AttachName.substr(rowObject.AttachName.lastIndexOf(".")) == ".jpg" || rowObject.AttachName.substr(rowObject.AttachName.lastIndexOf(".")) == ".png")
+                return "<a href='" + previewPath + "' data-lightbox='PreviewPicture'   style='margin-left: 15px; cursor: pointer; text-decoration: underline;' onclick='fn_DownLoadCnt(" + rowObject.Id + ")'>" + rowObject.AttachName + "</a>";
+            else {
+                var url = '@Url.Action("DownLoadForRename", "Report")' + "?fileName=" + encodeURIComponent(rowObject.AttachName) + "&sourcepath=" + previewPath;
+                return " <a href='" + url + "'  class='btn' style='text-align:left;' download='" + rowObject.AttachName + "'onclick='fn_DownLoadCnt(" + rowObject.Id + ")'>" + rowObject.AttachName + "</a>";
+            }
+        }
+
+        function fn_UnPreviewFile(cellvalue, options, rowObject) {
+            return cellvalue;
+        }
+        function fn_ValidateBeforeSave() {
+            fn_SaveCell.call(_grid);
+            var editData = _grid.getChangedCells('all');
+            if (editData.length == 0) {
+                $.sa.warning("没有要保存的数据");
+                return false;
+            }
+            for (var i = 0; i < editData.length; i++) {
+                if ((editData[i].GRUD == "I" || editData[i].GRUD == "R") && editData[i].Code == "") {
+                    $.sa.warning("请选择来源类型");
+                    return false;
+                }
+            }
+            return true;
+        }
+        function fn_DownLoadCnt(id) {
+            //$.sa.post("http://10.202.101.144:6505/infi/api/v1/Report/UpdateAttachmentDownloadCnt",
+            $.sa.post(UPDATEATTACHMENTDOWNLOADCNT,
+                JSON.stringify(id),
+               {
+                   "success": function (data) {
+                       fn_SearchData();
+                   },
+                   "failure": function (data) {
+                       $.sa.alert("保存失败");
+                   }
+               }, $("body"));
+
+        }
+        function fn_SetButtonStatus() {
+            var userType = '@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]';
+            if (userType == "A" || userType == "R") {
+                $("#btnSave").removeClass("hidden");
+                $("#btnDelete").removeClass("hidden");
+                $("#divUpload").removeClass("hidden");
+            } else {
+                $("#btnSave").addClass("hidden");
+                $("#btnDelete").addClass("hidden");
+                $("#divUpload").addClass("hidden");
+            }
+        }
+        function fn_SearchChk() {
+            if ($("#txtSDate").val() > $("#txtEDate").val()) {
+                $.sa.warning("结束日期不能小于开始日期"
+            , {
+                fnClose: function () {
+                    $("#txtEDate").focus();
+                    return false;
+                }
+            });
+            } else {
+                return true;
+            }
+        }
+        function fn_SearchData() {
+            //$.sa.get("http://10.202.101.144:6505/infi/api/v1/Report/GetAttachmentByUserId",
+            $.sa.get(GETATTACHMENTBYUSERID,
+                {
+                    'sourceType': $("#selSourceType").val()
+                , 'sDate': $("#txtSDate").val().replace(/\-/gi, '')
+                , 'eDate': $("#txtEDate").val().replace(/\-/gi, '')
+                , 'userId': '@Context.Request.Cookies[SessionKeys.SESSION_USERID]'
+                },
+             {
+                 "success": function (data) {
+                     fn_SetGrid(JSON.parse(data.body));
+                     if (JSON.parse(data.body).length == 0) {
+                         $.sa.alert(data.msg);
+                     }
+                 },
+                 "failure": function (data, statusText, jqXHR) {
+                     $.sa.warning(data.msg);
+                 }
+             }
+            , $("body"));
+        }
+        function fn_Search() {
+            var sdate = $("#txtSDate").val().replace(/\-/gi, '');
+            var edate = $("#txtEDate").val().replace(/\-/gi, '');
+            var disId = $("#select_distributor_id").val();
+            //$.sa.get('http://localhost:6505/infi/api/v1/Report/GetPlansListForExcelDownload',
+            $.sa.get(GETPLANSLISTFOREXCELDOWNLOAD,
+                          { SDate: sdate, EDate: edate, UserId: '@Context.Request.Cookies[SessionKeys.SESSION_USERID]', DisId: disId },
+                          {
+                              "success": function (data) {
+                                  if (data != null && JSON.parse(data.body).length > 0) {
+                                      //$('#selStatus').html(JsonToCboList("Name", "Code", JSON.parse(data.body), { "SelectType": "ALL" }));
+                                      fn_SetGrid1(JSON.parse(data.body));
+                                  } else {
+                                      $.sa.warning("没有查询到数据！");
+                                      fn_SetGrid1("");
+                                  }
+                              },
+                              "failure": function (data, statusText, jqXHR) {
+                                  fn_SetGrid1("");
+                                  $.sa.warning(data.msg);
+                              }
+                          }, $("body"));
+        }
+
+
+        function fn_Delrow() {
+            var ids = _grid.jqGrid('getGridParam', 'selarrrow');
+            if (ids.length <= 0) {
+                $.sa.warning("请选择要删除的行。", {
+                    fnClose: function () {
+                    }
+                });
+                return;
+            }
+            for (var i = ids.length - 1; i >= 0; i--) {
+                if (_grid.getCell(ids[i], "GRUD") != "I") {
+
+                    _grid.setCell(ids[i], "GRUD", "D");
+                    $(_grid.getGridRowById(ids[i])).addClass("decoration");
+                    $(_grid.getGridRowById(ids[i])).addClass("edited");
+                }
+                else {
+                    _grid.delRowData(ids[i]);
+                }
+            }
+        }
+        function fn_changeGrid() {
+            var selSourceType = $("#selSourceType").val();
+            if (selSourceType == "D") {
+                $("#btnSave").addClass("hidden");
+                $("#divUpload").addClass("hidden");
+                $("#btnDelete").addClass("hidden");
+                //_grid1.trigger('reloadGrid');
+                $("#divgrid").addClass("hidden");
+                $("#divgrid1").removeClass("hidden");
+                $("#distributor_id").removeClass("hidden");
+                $("#select_distributor_id").val("0");
+                fn_GridInit1();
+                fn_SetGrid1();
+            } else {
+                if ('@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]' == "A" || '@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]' == "R") {
+                    $("#btnSave").removeClass("hidden");
+                    $("#btnDelete").removeClass("hidden");
+                    $("#divUpload").removeClass("hidden");
+                }
+                //_grid.trigger('reloadGrid');
+                $("#divgrid1").addClass("hidden");
+                $("#divgrid").removeClass("hidden");
+                $("#distributor_id").addClass("hidden");
+                $("#select_distributor_id").val("0");
+                fn_SetGrid();
+            }
+        }
+        function fn_ExcelDownLoad(pid, id, name) {
+            var disid = id;
+            var disname = name;
+            var name = Reconvert("@Context.Request.Cookies[SessionKeys.SESSION_NAME]");
+
+            var opts = {
+                type: "Image",
+                imageUrl: "/images/ajax-loader.gif",
+                lines: 10, // loading小块的数量
+                length: 0, // 小块的长度
+                width: 18, // 小块的宽度
+                radius: 40, // 整个圆形的半径
+                corners: 1, // 小块的圆角，越大则越圆
+                rotate: 10, // loading动画的旋转度数，貌似没什么实际作用
+                color: '#047EC4', // 颜色
+                speed: 1, // 变换速度
+                trail: 60, // 余晖的百分比
+                shadow: false, // 是否渲染出阴影
+                hwaccel: false, // 是否启用硬件加速
+                className: 'spinner', // 给loading添加的css样式名
+                zIndex: 2e9, // The z-index (defaults to 2000000000)
+                top: '50%', // Top position relative to parent in px
+                left: '50%' // Left position relative to parent in px
+            };
+            var spinner = new Spinner(opts).spin(document.getElementById('loadBar'));
+
+            $.ajax({
+                type: "POST",
+                url: "/Report/UploadScoreAjaxDown?disCode=" + disid + "&startTime=" + $("#txtSDate").val() + "&endTime=" + $("#txtEDate").val() + "&status=F&Pid=" + pid + "&disName=" + disname + "&name=" + name,
+                contentType: false,
+                processData: false,
+                //data: data,
+                success: function (message) {
+                    document.getElementById("a").href = "/Template/" + message.split('\\')[message.split('\\').length - 1];
+                    document.getElementById("a").click();
+                },
+                beforeSend: function () {
+                    $("#modal-container-loadbar").css("display", "block");
+                    spinner.spin(document.getElementById('loadBar'));
+                },
+                complete: function () {
+                    spinner.stop();
+                    $("#modal-container-loadbar").css("display", "none");
+                },
+                error: function () {
+                    $.sa.warning("下载失败,请重试.");
+                }
+            });
+        }
+    </script>
+    <!--Grid-->
+    <script type="text/javascript">
+        function fn_GridInit() {
+            _grid.jqGrid({
+                datatype: 'local',
+                colModel: [
+
+                    {
+                        name: 'AttachName', label: '报告名', width: 120, align: 'left'
+                        , formatter: fn_PreviewFile,
+                        unformat: fn_UnPreviewFile
+                        , cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    }
+                    ,
+                    {
+                        name: 'Code', label: '来源类型', width: 30, align: 'center', editable: false, edittype: 'select'
+                        , formatter: 'select',
+                        formatoptions: {
+                            value: _execute
+                        },
+                        editoptions: {
+                            'class': 'form-control',
+                            value: _execute
+                        }
+                         , cellattr: function (rowId, val, rawObject, cm, rdata) {
+                             return 'class="readonlycell"';
+                         }
+                    },
+                    {
+                        name: 'DisCode', label: '经销商代码', width: 30, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'DisName', label: '经销商名称', width: 60, align: 'left',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'InDateTime', label: '上传日期', width: 40, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'DownloadCnt', label: '下载次数', width: 20, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'Id', label: 'Id', width: 40, align: 'center', hidden: true
+
+                    },
+                    {
+                        name: 'GRUD', label: 'GRUD', width: 40, align: 'center', hidden: true
+
+                    },
+                    {
+                        name: 'Url', label: 'Url', width: 40, align: 'center', hidden: true
+
+                    }
+                ],
+                width: $('#Grid').width(),
+                height: 'auto',
+                rownumbers: true,
+                rownumWidth: 50,
+                rowNum: 15,
+                rowList: [15, 30, 45],
+                footerrow: false,
+                cellsubmit: 'clientArray',
+                pager: jQuery('#pager'),
+                cellEdit: true,
+                editurl: 'clientArray',
+                viewrecords: true,
+                multiselect: true,
+                afterInsertRow: function (rowid, r) {
+                },
+                gridComplete: function (id) {
+                    var rowNum = parseInt($(this).getGridParam("records"), 50);
+                    if (rowNum > 0) {
+                        $(".ui-jqgrid-sdiv").show();
+                    }
+                    else {
+                        $(".ui-jqgrid-sdiv").hide();
+                    }
+                    $('#pager_left').css('width', '25%');
+                    $('#pager_right').css('width', '25%');
+
+                    $("[aria-describedby='grid_rn']").addClass("readonlycell");
+                }
+                @*, onCellSelect: function (rowid, iCol, cellcontent, e) {
+                    var userType = '@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]';
+                    if (userType == "A" || userType == "R") {
+                        $("#grid").setColProp('Code', { 'editable': true });
+                    } else {
+                        $("#grid").setColProp('Code', { 'editable': false });
+                    }
+                },
+                afterInsertRow: function (rowid, r) {
+                    var userType = '@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]';
+                    var $t = $(this);
+                    if (userType == "A" || userType == "R") {
+                        $t.find('#' + rowid).find("[aria-describedby='grid_Code']").removeClass("readonlycell");
+                    } else {
+                        $t.find('#' + rowid).find("[aria-describedby='grid_Code']").addClass("readonlycell");
+                    }
+
+                }*@
+            });
+        }
+        function fn_SetGrid(mydata) {
+            mydata = mydata || [];
+            _grid.clearGridData()
+            .setGridParam({
+                data: mydata
+            }).trigger('reloadGrid');
+        }
+        function fn_SetGrid1(mydata) {
+            mydata = mydata || [];
+            $("#grid1").clearGridData()
+            .setGridParam({
+                data: mydata
+            }).trigger('reloadGrid');
+        }
+        function fn_SaveCell() {
+            var $t = $(this);
+            var $ecs = $(".edit-cell", $t);
+            $ecs.each(function (idx, ec) {
+                var iRow = $(ec).parent().index();
+                var iCol = $(ec).index();
+                $t.saveCell(iRow, iCol);
+            });
+        }
+
+        //Excel数据导出
+        function fn_GridInit1() {
+            $("#grid1").jqGrid({
+                datatype: 'local',
+                colModel: [
+
+                    {
+                        name: 'Title', label: '计划任务标题', width: 160, align: 'left',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    }
+                    ,
+                    {
+                        name: 'Name', label: '经销商', width: 80, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'VisitDateTime', label: '拜访时间', width: 60, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'VisitTypeName', label: '拜访类型', width: 60, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'SourceName', label: '来源类型', width: 60, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'PStatusName', label: '状态', width: 50, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'Rate', label: 'Excel下载', width: 50, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }, formatter: function (v, o, r) {
+                            return '<button type="button" class="btn btn-primary btn-sm"  style="width:100%;"  onclick="fn_ExcelDownLoad(\'' + r.Id + '\',\'' + r.DisId + '\',\'' + r.Name + '\')">Excel下载</button>';
+                        }, unformat: function () {
+                            return 0;
+                        }
+                    },
+                    {
+                        name: 'Id', label: 'Id', width: 40, align: 'center', hidden: true
+
+                    }
+                ],
+                width: $('#Grid1').width(),
+                height: 'auto',
+                rownumbers: true,
+                rownumWidth: 50,
+                rowNum: 15,
+                rowList: [15, 30, 45],
+                footerrow: false,
+                cellsubmit: 'clientArray',
+                pager: jQuery('#pager1'),
+                cellEdit: true,
+                editurl: 'clientArray',
+                viewrecords: true,
+                multiselect: false,
+                afterInsertRow: function (rowid, r) {
+                },
+                gridComplete: function (id) {
+                    var rowNum = parseInt($(this).getGridParam("records"), 50);
+                    if (rowNum > 0) {
+                        $(".ui-jqgrid-sdiv").show();
+                    }
+                    else {
+                        $(".ui-jqgrid-sdiv").hide();
+                    }
+                    $('#pager1_left').css('width', '25%');
+                    $('#pager1_right').css('width', '25%');
+
+                    $("[aria-describedby='grid1_rn']").addClass("readonlycell");
+                }
+            });
+        }
+    </script>
+
+    <!-- 6. Upload-->
+    <script type="text/javascript">
+        //upload
+       $(document).ready(function () {
+           var  uploader= new plupload.Uploader({
+                runtimes: 'html5,flash,silverlight,html4',
+                browse_button: 'selectfiles0',
+                multi_selection: true,
+                container: document.getElementById('container0'),
+                flash_swf_url: 'lib/plupload-2.1.2/js/Moxie.swf',
+                silverlight_xap_url: 'lib/plupload-2.1.2/js/Moxie.xap',
+                url: 'http://oss.aliyuncs.com',
+
+                //resize: {
+                //    quality: 50
+                //},
+                init: {
+                    PostInit: function () {
+                        document.getElementById('ossfile0').innerHTML = '';
+                        document.getElementById('postfiles0').onclick = function () {
+                            set_upload_param(uploader, '', false);
+                            return false;
+                        };
+                    },
+                    FilesAdded: function (up, files) {
+                        var canUpload = "Y";
+                        for (var i = 0; i < files.length; i++) {
+                            if (files[i].name && files[i].name.split("_").length <2) {
+                                canUpload = "N";
+                                $.sa.warning("文件格式必须是:地区或经销商代码_文件名");
+                                return;
+                            }
+                        }
+                        if (canUpload == "N") {
+                            for (var i = 0; i < files.length; i++) {
+                                uploader.files.splice(jQuery.inArray(files[i], uploader.files), 1);
+                            }
+                        }
+                        plupload.each(files, function (file) {
+
+                            if (file.name && file.name.split("_").length < 2) {
+                                //$.sa.warning("文件格式必须是:地区或经销商代码_文件名");
+                                canUpload = "N";
+                                uploader.files.splice(jQuery.inArray(file, uploader.files), 1);
+                            }
+                            if (canUpload == "Y") {
+                                document.getElementById('ossfile0').innerHTML += '<div id="' + file.id + '" class="uploadify-queue-item">\
+					             <div class="cancel">\
+						         <a href="" onclick="javascript:uploader.removeFile(\'' + file.id + '\'); return false;">X</a>\
+					             </div>\
+					             <span class="fileName">' + file.name + ' (' + plupload.formatSize(file.size) + ')</span><span class="data"></span>\
+					            <div class="uploadify-progress">\
+						            <div class="uploadify-progress-bar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>\
+					            </div>\
+				             </div>';
+                            }
+
+                        });
+                        if (canUpload == "Y") {
+                            document.getElementById('postfiles0').click();
+                        }
+
+                    },
+                    FilesRemoved: function (up, files) {
+                        $item = $("#" + files[0].id);
+                        $item.find('.data').removeClass('data').html(' - 上传取消中');
+                        $item.find('.uploadify-progress-bar').remove();
+                        $item.delay(1000).fadeOut(500, function () {
+                            $(this).remove();
+                        });
+                    },
+                    BeforeUpload: function (up, file) {
+                        set_upload_param(up, file.name, true);
+                    },
+
+                    UploadProgress: function (up, file) {
+                        var d = document.getElementById(file.id);
+                        d.getElementsByTagName('span')[1].innerHTML = '<span>' + file.percent + "%</span>";
+                        var prog = d.getElementsByTagName('div')[1];
+                        var progBar = prog.getElementsByTagName('div')[0]
+                        progBar.style.width = file.percent + '%';
+                        progBar.setAttribute('aria-valuenow', file.percent);
+                    },
+
+                    FileUploaded: function (up, file, info) {
+                        if (info.status == 200) {
+                            setTimeout(function () {
+                                if ($('#' + file.id)) {
+                                    up.total.size -= file.size;
+                                    up.total.uploaded -= 1;
+                                    delete up.files[file.id]
+                                    $('#' + file.id).fadeOut(500, function () {
+                                        $(this).remove();
+                                    });
+                                }
+                            }, 1000);
+                            fn_Addrow(file.name, g_object_name);
+                        }
+                        else {
+                            document.getElementById(file.id).getElementsByTagName('b')[0].innerHTML = info.response;
+                        }
+                    },
+
+                    Error: function (up, err) {
+                        console.log(document.createTextNode("\nError xml:" + err.response));
+                        console.log(err.response);
+                    }
+                }
+            });
+            uploader.init();
+        });
+
+        function fn_Addrow(fileName, key) {
+            var disCode = "";
+            if (fileName && fileName.split("_").length >= 2) {
+                disCode = fileName.split("_")[0];
+            }
+            var ids = _grid.getDataIDs();
+            var pref = $.jgrid.uidPref;
+            var newid = 1;
+            if (ids && ids.length > 0) {
+                var regx = new RegExp(pref, 'g');
+                var nids = ids.join(',').replace(regx, '').split(',');
+                var maxid = Math.max.apply(Math, nids);
+                newid = maxid + 1;
+            }
+            newid = pref + (newid).toString();
+            var rowdata = {
+                AttachName: fileName,
+                Url: host + g_dirname + key,
+                DisCode: disCode,
+                GRUD: "I",
+                Code:"K"
+            };
+            _grid.addRowData(newid, rowdata, 'last');
+            $(_grid.getGridRowById(newid)).addClass("edited");
+        }
+
+    </script>
+}
+<div class="modal" style="display:none;" id="modal-container-loadbar">
+    <div id="loadBar">
+
+    </div>
+</div>
+<div class="row gap-top">
+    <div class="col-md-12">
+        <span class="fa fa-flag fa-lg gap-icon"></span><span class="page-mtitle">报告查看</span><span>&nbsp;>&nbsp;</span>
+        <span class="page-title">报告查看</span>
+        <div class="pull-right">
+            <button class="btn btn-primary" id="btnSearch">
+                <span class="fa fa-search gap-icon"></span>查询
+            </button>
+            <button class="btn btn-primary hidden" id="btnSave">
+                <span class="fa fa-save gap-icon"></span>保存
+            </button>
+            <a href="~/Template/ScoreViewList.xlsx" class="aline" id="a" style="display:none"></a>
+        </div>
+    </div>
+</div>
+<div class="row gap-top">
+    <div class="col-md-4 col-sm-6">
+        <div class="input-group">
+            <span class="input-group-addon title-sm ">查询期间</span>
+            <input size="16" type="text" value="@ViewBag.FirstDay" class="form_datetime form-control text-center datewidth"
+                   id="txtSDate" />
+            <span>~</span>
+            <input size="16" type="text" value="@ViewBag.CurrentDate" class="form_datetime form-control text-center datewidth datemargin"
+                   id="txtEDate" />
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="input-group">
+            <span class="input-group-addon title-sm">来源类型</span>
+            <select class="form-control readonly" id="selSourceType" disabled></select>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="input-group" id="distributor_id">
+            <span class="input-group-addon title-sm">经销商</span>
+            <select class="form-control" id="select_distributor_id"></select>
+        </div>
+    </div>
+</div>
+<div class="row gap-top">
+
+    <div class="pull-right gap-icon">
+        <button class="btn btn-primary hidden" id="btnDelete">
+            <span class="fa fa-minus gap-icon"></span>删除
+        </button>
+    </div>
+    <div class="pull-right gap-icon hidden" id="divUpload">
+        <div id="container0" style="padding-left:5px;">
+            <a id="selectfiles0" href="javascript:void(0);" class='btn btn-primary'><span class="fa fa-cloud-upload gap-icon"></span>上传</a>
+            <a id="postfiles0" href="javascript:void(0);" class='btn' style="display:none">开始上传</a>
+        </div>
+    </div>
+
+</div>
+<div class="row gap-top" id="divgrid">
+    <div id="Grid" class="col-md-12">
+        <table id="grid" class="ui-jqgrid-htable"></table>
+        <div id="pager" class="page">
+        </div>
+    </div>
+</div>
+<div class="row gap-top" id="divgrid1">
+    <div id="Grid1" class="col-md-12">
+        <table id="grid1" class="ui-jqgrid-htable"></table>
+        <div id="pager1" class="page">
+        </div>
+    </div>
+</div>
+<div class="pull-right">
+    <div id="ossfile0" style="height:20px"></div>
+</div>
+
+
+

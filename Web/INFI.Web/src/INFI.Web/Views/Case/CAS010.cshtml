@@ -1,0 +1,348 @@
+﻿@{
+    Layout = "_LayoutMenu";
+    ViewData["Title"] = "案例列表";
+}
+@section HeadCss{
+    <style>
+        #txtSDate.datewidth, #txtEDate.datewidth {
+            width: 48.5%;
+        }
+
+        .datemargin {
+            margin-left: 3%;
+            margin-top: -1.4em;
+        }
+
+        .gap-icon {
+            margin-right: 5px;
+        }
+         .jqgridbuttonwidth
+        {
+            width: 90%;
+        }
+    </style>
+}
+<div class="row gap-top">
+    <div class="col-md-12">
+        <span class="fa fa-flag fa-lg gap-icon"></span><span class="page-mtitle">案例分享</span><span>&nbsp;>&nbsp;</span>
+        <span class="page-title">案例列表</span>
+        <div class="pull-right">
+            <button class="btn btn-primary" id="btnSearch">
+                <span class="fa fa-search gap-icon"></span>查询
+            </button>
+            <button class="btn btn-primary" id="btnRegister">
+                <span class="fa fa-pencil gap-icon"></span>登记
+            </button>
+            <button class="btn btn-primary" id="btnDelCase">
+                <span class="fa fa-trash-o gap-icon"></span>删除
+            </button> 
+        </div>
+    </div>
+</div>
+<div class="row gap-top">
+    <div class="col-md-4 col-sm-6">
+        <div class="input-group">
+            <span class="input-group-addon title-sm ">查询期间</span>
+            <input size="16" type="text" value="@ViewBag.FirstDay" class="form_datetime form-control text-center datewidth"
+                    id="txtSDate" />
+            <span>~</span>
+            <input size="16" type="text" value="@ViewBag.CurrentDate" class="form_datetime form-control text-center datewidth datemargin"
+                    id="txtEDate" />
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="input-group" id="distributor_id">
+            <span class="input-group-addon title-sm">案例类型</span>
+            <select class="form-control readonly" id="select_casetype_id"></select>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="input-group">
+            <span class="input-group-addon title-sm ">关键字</span>
+            <input type="text" class="form-control" id="input_content_id" maxlength="200" />
+        </div>
+    </div>
+</div>
+<div class="row gap-top">
+    <div id="Grid" class="col-md-12">
+        <table id="grid" class="ui-jqgrid-htable"></table>
+        <div id="pager" class="page">
+        </div>
+    </div>
+</div>
+@section Scripts{
+    <!-- 1. Load -->
+    <script type="text/javascript">
+        var _grid, _gridName;
+        $(document).ready(function () {
+            fn_Initial();
+            fn_InitialData();
+            fn_GridInit();
+        });
+    </script>
+    <!-- 2. Init -->
+    <script type="text/javascript">
+        function fn_Initial() {
+            _gridName = 'grid';
+            _grid = $('#' + _gridName);
+            $(".form_datetime").datetimepicker({
+                format: 'yyyy-mm-dd',
+                language: 'zh-CN',
+                minView: 2, //显示到具体日期，如果设置到1，则显示到具体时间点。
+                autoclose: 1,
+                todayHighlight: 1,
+                todayBtn: 1,
+                startView: 2, //开始页面设置为具体到日期的那个页面。
+                pickerPosition: 'bottom-left'
+            });
+            $("#txtSDate").val("@ViewBag.FirstDay");
+            $("#txtEDate").val("@ViewBag.CurrentDate");
+            DateFormatCheckEvent("txtSDate", { CheckType: "BLANK" });
+            DateFormatCheckEvent("txtEDate", { CheckType: "BLANK" });
+            $('#btnSearch').on('click', function () {
+                if (fn_SearchChk())
+                    fn_SearchData();
+            });
+            $('#btnRegister').on('click', function () {
+                fn_GetDetail(0);
+            });
+            $('#btnDelCase').on('click', function () {
+                fn_Delrow();
+            });
+            if ('@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]' == 'Z'
+                || '@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]' == 'R'
+                || '@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]' == 'A') {
+                $('#btnRegister').show();
+                $('#btnDelCase').show();
+            } else {
+                $('#btnRegister').hide();
+                $('#btnDelCase').hide();
+            }
+        }
+    </script>
+    <!-- 3. InitData -->
+    <script type="text/javascript">
+            function fn_InitialData() {
+                $.sa.get(TASKGETSTATUS,  { GroupCode: '12' },
+                    {
+                        "success": function (data)
+                        {
+                            $("#select_casetype_id").html(JsonToCboList("Name", "Value", JSON.parse(data.body), { 'SelectType': 'ALL' }));
+                        },
+                        "failure": function (data, statusText, jqXHR) {
+                            $("#callback_1_layer").html(data.msg);
+                        }
+                    }
+                    , $(".Grid")
+                    , { type: "spin" });
+            }
+    </script>
+    <!--Grid-->
+    <script type="text/javascript">
+        function fn_GridInit() {
+            _grid.jqGrid({
+                datatype: 'local',
+                colModel: [
+                    {
+                        name: 'CaseNo', label: '案例编号', width: 80, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'CaseTypeName', label: '案例类型', width: 50, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'CaseTitle', label: '案例标题', width: 180, align: 'left',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'CaseRegDate', label: '登记日', width: 60, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: 'CaseRegUserName', label: '登记人', width: 70, align: 'left',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                    {
+                        name: '', label: '详细', width: 60, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        },
+                        formatter: fn_Detail, unformat: fn_UnDetail
+                    },
+                    {
+                        name: 'Id', hidden: true
+                    }
+                ],
+                width: $('#Grid').width(),
+                height: 'auto',
+                rownumbers: true,
+                rownumWidth: 50,
+                rowNum: 15,
+                rowList: [15, 30,45],
+                footerrow: false,
+                cellsubmit: 'clientArray',
+                pager: jQuery('#pager'),
+                cellEdit: true,
+                editurl: 'clientArray',
+                viewrecords: true,
+                multiselect: true,
+                afterInsertRow: function (rowid, r) {
+                },
+                gridComplete: function (id) {
+                    var rowNum = parseInt($(this).getGridParam("records"), 50);
+                    if (rowNum > 0) {
+                        $(".ui-jqgrid-sdiv").show();
+                    }
+                    else {
+                        $(".ui-jqgrid-sdiv").hide();
+                    }
+
+                    //fix the pager position
+                    $('#pager_left').css('width', '25%');
+                    $('#pager_right').css('width', '25%');
+
+                    $("[aria-describedby='grid_rn']").addClass("readonlycell");
+                }
+            });
+        }
+        function fn_SetGrid(mydata) {
+            mydata = mydata || [];
+            _grid.clearGridData()
+            .setGridParam({
+                data: mydata
+            }).trigger('reloadGrid');
+        }
+        ///详细按钮
+        function fn_Detail(cellvalue, options, rowObject) {
+            return '<button type="button" class="btn btn-primary btn-md jqgridbuttonwidth"  onclick="fn_GetDetail(' + rowObject.Id + ')">详细</button>';
+        }
+
+        function fn_UnDetail(cellvalue, options, rowObject) {
+            return "";
+        }
+        function fn_GetDetail(id) {
+            var pageName = "案例详细";
+            if (id == 0)
+                pageName = "案例登记";
+            $.sa.pop("/Case/CAS010P", {
+                params: { 'pamId': id }, width: '800px', height: '520px', title: '<span class="fa fa-hand-o-right gap-icon-right"></span><span>' + pageName + '</span>'
+            , popcallback: function () {
+                fn_Refresh(_grid.getGridParam('page'));
+            }
+            });
+        }
+        function fn_Refresh(page) {
+            fn_SearchData(page);
+        }
+    </script>
+    <!--Search-->
+    <script type="text/javascript">
+        function fn_SearchChk() {
+            if ($("#txtSDate").val() > $("#txtEDate").val()) {
+                $.sa.warning("结束日期不能小于开始日期"
+            , {
+                fnClose: function () {
+                    $("#txtEDate").focus();
+                    return false;
+                }
+            });
+            } else {
+                return true;
+            }
+        }
+        function fn_SearchData(page) {
+            $.sa.get(SEARCHCASESLIST, {
+                'sDate': $.trim($("#txtSDate").val())
+                            , 'eDate': $.trim($("#txtEDate").val())
+                            , 'caseType': $.trim($("#select_casetype_id").val())
+                            , 'content': $.trim($("#input_content_id").val())
+                            , 'inUserId': '@Context.Request.Cookies[SessionKeys.SESSION_USERID]'
+                        },
+                       {
+                           "success": function (data) {
+                               if (data.resultCode == 0) {
+                                   var resultlist = JSON.parse(data.body);
+                                   if (resultlist.length == 0) {
+                                       _grid.jqGrid("clearGridData");
+                                       $.sa.alert('查询没有数据');
+                                   } else {
+                                       fn_SetGrid(resultlist);
+                                       $.sa.alert('查询完毕', { maxWidth: '400px', minWidth: '300px', showClose: false });
+                                   }
+                               } else {
+                                   $.sa.alert(data.msg);
+                               }
+                               if (page > 0) {
+                                   _grid.jqGrid('setGridParam', {
+                                       page: page
+                                   }).trigger("reloadGrid");
+                               }
+                           },
+                           "failure": function (data, statusText, jqXHR){
+                               $("#callback_1_layer").html(data.msg);
+                           }
+                       }
+                       , $("body"));
+        }
+    </script>
+    <!--Delete-->
+    <script type="text/javascript">
+        function fn_Delrow() {
+            var ids = _grid.jqGrid('getGridParam', 'selarrrow');
+            if (ids.length <= 0) {
+                $.sa.warning("请选择需要删除的案例", {
+                    fnClose: function () {
+                        //$(_grid).find("input[type=checkbox][offval]")[0].focus();
+                    }
+                });
+                return;
+            } else {
+                var param = {};
+                param.InUserId = '@Context.Request.Cookies[SessionKeys.SESSION_USERID]';
+                var idParam = [];
+                for (var i = 0; i < ids.length; i++)
+                {
+                    var obj = {};
+                    obj.Id = parseInt(_grid.getRowData(ids[i]).Id);
+                    idParam.push(obj);
+                }
+                param.IdList = idParam;
+                $.sa.confirm("确定要删除吗？", {
+                    fnOk: function () {
+                        $(".close").click();
+                        $.sa.post(UPDATECASESINFO,
+                        JSON.stringify(param),
+                        {
+                            "success": function (data) {
+                                if (data.resultCode == 0) {
+                                    $.sa.alert("删除成功");
+                                    fn_SearchData('1');
+                                } else {
+                                    $.sa.alert(data.msg);
+                                }
+                            },
+                            "failure": function (data, statusText, jqXHR) {
+                                $("#callback_1_layer").html(data.msg);
+                            }
+                        }
+                        , $(".Grid")
+                        , { type: "spin" });
+                    }
+                });
+            }
+        }
+    </script>
+}
+
+

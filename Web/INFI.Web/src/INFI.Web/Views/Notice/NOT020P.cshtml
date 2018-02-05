@@ -1,0 +1,267 @@
+﻿@{
+    Layout = "_LayoutOfPop";
+    ViewData["Title"] = "通知审核Pop";
+}
+@section scripts{
+    <!-- 1. Load -->
+    <script type="text/javascript">
+        var _grid, _gridName;
+        var _noticeReaderId;
+        var _status;
+
+        $(document).ready(function () {
+            fn_Initialize();
+            fn_InitGrid();
+            fn_SetControlStatus();
+            fn_GetApproalDetail(_noticeReaderId);
+
+            $("#btnPass").on("click", function () {
+
+                fn_Operation(true)
+            });
+            $("#btnReject").on("click", function () {
+
+                fn_Operation(false)
+            });
+
+        });
+    </script>
+    <!-- 2. Init -->
+    <script type="text/javascript">
+
+        function fn_Initialize() {
+
+            _gridName = 'gridAttach';
+            _grid = $('#' + _gridName);
+
+            _noticeReaderId = Request["NoticeReaderId"];
+            _status = Request["Status"];
+        }
+
+    </script>
+    <!-- 3. Validate -->
+    <script type="text/javascript">
+        function fn_validateBeforeSave() {
+            if ($("#txtReplyContent").val() == null || $("#txtReplyContent").val() == "") {
+                $.sa.warning("请输入审核意见");
+                $("#txtReplyContent").focus();
+                return false;
+            }
+            return true;
+        }
+    </script>
+
+    <!-- 4. Custom Function -->
+    <script type="text/javascript">
+
+        function fn_GetApproalDetail(noticeReaderId) {
+            //$.sa.get("http://10.202.101.144:6505/infi/api/v1/NotifiApproval/GetNoticeApprovalDetail",
+            $.sa.get(GETNOTICEAPPROVALDETAIL,
+                 {
+                     noticeReaderId: noticeReaderId
+                 },
+                 {
+                     "success": function (data) {
+                         console.log(JSON.parse(data.body));
+                         fn_BindData(JSON.parse(data.body));
+
+                     },
+                     "failure": function (data) {
+                         $.sa.alert("查询失败");
+                     }
+                 }, $("body"));
+
+        }
+        function fn_BindData(data) {
+            $("#inputNoticeTitile").val(data.Title);
+            $("#inputNoticeNo").val(data.NoticeNo);
+            $("#inputReader").val(data.ReaderName);
+            $("#txtFeedeBack").val(data.FeedbackContent);
+            $("#txtReplyContent").val(data.ReplyContent);
+            fn_SetGrid(data.AttachList);
+        }
+        function fn_SetControlStatus() {
+            if (_status == "W") {
+                $("#divButtons").removeClass("hidden");
+                $("#txtReplyContent").attr("disabled", false);
+            }
+            else {
+                $("#divButtons").addClass("hidden");
+                $("#txtReplyContent").attr("disabled", true);
+            }
+
+        }
+
+        function fn_SetGrid(mydata) {
+            mydata = mydata || [];
+            _grid.clearGridData()
+                .setGridParam({
+                    data: mydata
+                }).trigger('reloadGrid');
+            localdata = mydata;
+        }
+        //预览按钮
+        function fn_PreviewFile(cellvalue, options, rowObject) {
+            var previewPath = rowObject.Url;
+            if (rowObject.AttachName.substr(rowObject.AttachName.lastIndexOf(".")) == ".gif" || rowObject.AttachName.substr(rowObject.AttachName.lastIndexOf(".")) == ".jpg" || rowObject.AttachName.substr(rowObject.AttachName.lastIndexOf(".")) == ".png")
+                return "<a href='" + previewPath + "' data-lightbox='PreviewPicture' style='margin-left: 10px; cursor: pointer; color: #0088cc; text-decoration: underline;'>" + rowObject.AttachName + "</a>";
+            else
+            {
+                var url = '@Url.Action("DownLoadForRename", "Notice")' + "?fileName=" + encodeURIComponent(rowObject.AttachName) + "&sourcepath=" + previewPath;
+                return " <a href='" + url + "'  class='btn' download='" + rowObject.AttachName + "'>" + rowObject.AttachName + "</a>";
+            }
+        }
+        function fn_UnPreviewFile() {
+
+            return "";
+        }
+
+        function fn_Operation(type) {
+
+            if (!fn_validateBeforeSave()) {
+                return;
+            }
+            $(".close").click();
+            var saveData = { NoticeReaderId: _noticeReaderId, PassYN: type, ReplyContent: $("#txtReplyContent").val(), UserId: "@Context.Request.Cookies[SessionKeys.SESSION_USERID]" };
+            //$.sa.post("http://10.202.101.144:6505/infi/api/v1/NotifiApproval/NoticeApprovalS",
+            $.sa.post(NOTICEAPPROVALS,
+                 JSON.stringify(saveData),
+                 {
+                     "success": function (data) {
+                         $.sa.alert('保存成功！');
+                         window.parent.popcallback("success");
+                     },
+                     "failure": function (data) {
+                         $.sa.alert("保存失败");
+                     }
+                 }, $("body"));
+        }
+
+    </script>
+
+    <!-- 5. Grid -->
+    <script type="text/javascript">
+        function fn_InitGrid() {
+            _grid.jqGrid({
+                datatype: 'local',
+                colModel: [
+                        {
+                            name: 'AttachName', label: "名称", width: 60, align: 'left',
+                            cellattr: function (rowId, val, rawObject, cm, rdata) {
+                                return 'class="readonlycell"';
+                            },
+                            formatter: fn_PreviewFile, unformat: fn_UnPreviewFile
+                        },
+                        {
+                            name: 'Url', label: "Url", width: 150, align: 'left', hidden: true
+                        }
+
+                ],
+                width: $('#Grid').width(),
+                height: 'auto',
+                rownumbers: true,
+                rownumWidth: 40,
+                rowNum: 10,
+                rowList: [10, 20, 30],
+                footerrow: false,
+                cellsubmit: 'clientArray',
+                pager: jQuery('#pager1'),
+                cellEdit: true,
+                editurl: 'clientArray',
+                viewrecords: true,
+                gridComplete: function (id) {
+                    var rowNum = parseInt($(this).getGridParam("records"), 10);
+                    if (rowNum > 0) {
+                        $(".ui-jqgrid-sdiv").show();
+                    }
+                    else {
+                        $(".ui-jqgrid-sdiv").hide();
+                    }
+                    $('#pager1_left').css('width', '25%');
+                    $('#pager1_right').css('width', '25%');
+                    $("[aria-describedby='gridAttach_rn']").addClass("readonlycell");
+                },
+                afterInsertRow: function (rowid, r) {
+
+                },
+                ondblClickRow: function (rowid, iRow, iCol, e) {
+                    var rowdata = $("#gridNotice").jqGrid('getRowData', rowid);
+                    fn_SearchDetail(rowdata.NoticeId);
+                }
+            });
+        }
+        function fn_SetGrid(mydata) {
+            mydata = mydata || [];
+            _grid.clearGridData()
+                .setGridParam({
+                    data: mydata
+                }).trigger('reloadGrid');
+            localdata = mydata;
+        }
+    </script>
+}
+
+<div class="row">
+    <div class="col-md-12  col-sm-12  gap-top">
+        <div class="input-group">
+            <label class="input-group-addon title-xs">通知标题</label>
+            <input type="text" class="form-control" id="inputNoticeTitile" disabled>
+        </div>
+    </div>
+
+</div>
+<div class="row">
+    <div class="col-md-12  col-sm-12 gap-top">
+        <div class="input-group">
+            <label class="input-group-addon title-xs">通知编号</label>
+            <input type="text" class="form-control" id="inputNoticeNo" disabled>
+        </div>
+    </div>
+
+</div>
+<div class="row">
+    <div class="col-md-12  col-sm-12  gap-top">
+        <div class="input-group">
+            <label class="input-group-addon title-xs">反馈对象</label>
+            <input type="text" class="form-control" style="max-width:100%;" id="inputReader" disabled>
+        </div>
+    </div>
+
+</div>
+<div class="row">
+    <div class="col-md-12  col-sm-12  gap-top">
+        <div class="input-group">
+            <label class="input-group-addon title-xs">反馈内容</label>
+            <textarea id="txtFeedeBack" class="form-control" style="height:100px;" disabled></textarea>
+        </div>
+    </div>
+
+</div>
+<div class="row gap-top">
+    <div class="col-md-12"><span class="fa fa-angle-double-right">附件</span></div>
+    <div id="Grid" class="col-md-12">
+        <table id="gridAttach" class="ui-jqgrid-htable"></table>
+        <div id="pager1" class="page">
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12  col-sm-12" style="padding-top:10px;">
+        <div class="input-group">
+            <label class="input-group-addon title-xs"><font style="color:red">*</font>审核意见</label>
+            <textarea id="txtReplyContent" class="form-control" style="height:100px;"></textarea>
+        </div>
+    </div>
+</div>
+<div class="row gap-top hidden" id="divButtons">
+    <div class="col-md-12">
+        <div style="text-align:center">
+            <button type="button" class="btn btn-primary" id="btnPass">
+                <span class="fa fa-check-circle"></span>通过
+            </button>
+            <button type="button" class="btn btn-primary" id="btnReject">
+                <span class="fa fa-times-circle-o"></span>驳回
+            </button>
+        </div>
+    </div>
+</div>
