@@ -136,12 +136,12 @@
 
         function fn_SetButtonStatus() {
             //英菲尼迪平台“报备模块”，请在节后第一时间关闭经销商填写的权限，仅供经销商查看。Apply by ZhaoJingjing and  modify by DongLimin 2017-10-9 8:50:16
-            @*var userType = '@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]';
+            var userType = '@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]';
             if (userType == "S") {
                 $("#btnRegist").removeClass("hidden");
-            } else {*@
+            } else {
                 $("#btnRegist").addClass("hidden");
-            //}
+            }
         }
         function fn_SearchChk() {
             if ($("#txtSDate").val() > $("#txtEDate").val()) {
