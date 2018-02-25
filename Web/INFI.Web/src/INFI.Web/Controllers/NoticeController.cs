@@ -75,7 +75,7 @@ namespace INFI.Web.Controllers
         {
             string contentType = "application/octet-stream";
             byte[] bytes = await CommonHelper.Current.HttpGetFileBytes(sourcepath);
-            return this.File(bytes, contentType, fileName);
+            return this.File(bytes, contentType, fileName); 
         }
     }
 }
