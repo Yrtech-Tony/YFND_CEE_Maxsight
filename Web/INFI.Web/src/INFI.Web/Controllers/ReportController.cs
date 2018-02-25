@@ -38,7 +38,7 @@ namespace INFI.Web.Controllers
         {
             DateTime now = DateTime.Now;
             ViewBag.CurrentDate = now.ToString("yyyy-MM-dd");
-            ViewBag.FirstDay = new DateTime(now.Year, 4, 1).ToString("yyyy-MM-dd");
+            ViewBag.FirstDay = new DateTime(now.Year, now.Month, 1).ToString("yyyy-MM-dd");
             return View();
         }
         public async Task<ActionResult> DownLoadForRename(string fileName = "", string sourcepath = "")
