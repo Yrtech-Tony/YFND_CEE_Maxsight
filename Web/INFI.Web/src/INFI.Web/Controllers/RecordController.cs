@@ -80,6 +80,7 @@ namespace INFI.Web.Controllers
             //ZIP 
             string zipFile = Path.Combine(downloads, timestamp + ".zip");
             ZipFile.CreateFromDirectory(rootPath, zipFile);
+            Directory.Delete(rootPath, true);//打包后删除原文件夹
 
             return Json(new { ZipFile = zipFile.Replace(_environment.WebRootPath,""), Status = true });
         }
@@ -125,8 +126,7 @@ namespace INFI.Web.Controllers
         {
             byte[] fileData = CommonHelper.Current.HttpGetFileBytes(fileName).Result;
             string filePath = Path.Combine(localPath, attachName);
-            BytesToFile(fileData, filePath);
-            
+            BytesToFile(fileData, filePath);            
         }
                
         
