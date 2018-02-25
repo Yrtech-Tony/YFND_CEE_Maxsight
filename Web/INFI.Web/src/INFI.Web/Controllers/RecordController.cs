@@ -54,8 +54,8 @@ namespace INFI.Web.Controllers
             foreach(RecordItemDto recItemDao in result.Result)
             {
                 int RId = recItemDao.RId;
-                string firstDic = recItemDao.DisCode + recItemDao.DisName;
-                string secondDic = recItemDao.RecordType + recItemDao.RecordTitle;                
+                string firstDic = recItemDao.DisCode +"_"+ recItemDao.DisName;
+                string secondDic = recItemDao.RecordType + "_" + recItemDao.RecordTitle;                
                 string localPath = Path.Combine(rootPath, firstDic, secondDic);               
 
                 if (!Directory.Exists(localPath))
@@ -69,7 +69,7 @@ namespace INFI.Web.Controllers
                 }
                 foreach (AttachmentMngDto attach in recInfoDto.AttachmentList)
                 {
-                    DownloadOSSFile(attach.Url, localPath);
+                    DownloadOSSFile(attach.Url, localPath, attach.AttachName);
                     hasAttach = true;
                 }
             }
@@ -121,10 +121,10 @@ namespace INFI.Web.Controllers
             return recInfoDto;
         }
 
-        public void DownloadOSSFile(string fileName,string localPath)
+        public void DownloadOSSFile(string fileName,string localPath,string attachName)
         {
             byte[] fileData = CommonHelper.Current.HttpGetFileBytes(fileName).Result;
-            string filePath = Path.Combine(localPath, Path.GetFileName(fileName));
+            string filePath = Path.Combine(localPath, attachName);
             BytesToFile(fileData, filePath);
             
         }
