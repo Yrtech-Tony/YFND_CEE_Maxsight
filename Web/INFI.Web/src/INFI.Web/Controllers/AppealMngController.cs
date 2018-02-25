@@ -35,16 +35,7 @@ namespace INFI.Web.Controllers
         public IActionResult APP040()
         {
             DateTime now = DateTime.Now;
-            int mouth = 0;
-            if (now.Month < 6)
-            {
-                mouth = 4;
-            }
-            else
-            {
-                mouth = 6;
-            }
-            DateTime d1 = new DateTime(now.Year, mouth, 1);
+            DateTime d1 = new DateTime(2018, 2, 25);
             ViewBag.CurrentDate = now.ToString("yyyy-MM-dd");
             ViewBag.FirstDayOfMonth = d1.ToString("yyyy-MM-dd");
             return View();
