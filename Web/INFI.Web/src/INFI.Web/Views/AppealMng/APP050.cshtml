@@ -235,6 +235,12 @@
                 datatype: 'local',
                 colModel: [
                         {
+                            name: 'ScoreStandard', label: "体系编号", width: 30, align: 'center',
+                            cellattr: function (rowId, val, rawObject, cm, rdata) {
+                                return 'class="readonlycell"';
+                            }
+                        },
+                        {
                             name: 'Title', label: "体系名称", width: 150, align: 'left',
                             cellattr: function (rowId, val, rawObject, cm, rdata) {
                                 return 'class="readonlycell"';
@@ -261,7 +267,7 @@
                             }
                         },
                         {
-                            name: 'UserName', label: "申诉人", width: 50, align: 'center',
+                            name: 'UserName', label: "申诉人", width: 80, align: 'center',
                             cellattr: function (rowId, val, rawObject, cm, rdata) {
                                 return 'class="readonlycell"';
                             }
