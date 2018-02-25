@@ -16,6 +16,7 @@ namespace INFI.Web.Common
 {
     public class CommonHelper
     {
+        public const string OssBaseUrl = "http://infi.oss-cn-shanghai.aliyuncs.com/";
         private static CommonHelper current;
         public static CommonHelper Current
         {
