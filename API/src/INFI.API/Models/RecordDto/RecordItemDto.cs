@@ -8,6 +8,7 @@ namespace INFI.API.Models.RecordDto
     public class RecordItemDto
     {
         public int DisId { get; set; }
+        public string DisCode { get; set; }
         public string RecordType { get; set; }
         public string RecordTitle { get; set; }
         public string ApproalStatus { get; set; }
