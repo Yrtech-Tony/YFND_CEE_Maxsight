@@ -39,7 +39,7 @@
     </style>
 }
 @section Scripts{
-
+    <script src="~/lib/spin.js"></script>
     <!-- 1. Load -->
     <script type="text/javascript">
         var _grid, _gridName;
@@ -87,6 +87,10 @@
                 fn_downLoad();
             });
 
+            //add by 霍海涛   批量下载报备附件
+            $("#btnDownLoadAttach").on("click", function () {
+                fn_downloadAttach();
+            });
         }
     </script>
     <!-- 3. InitData -->
@@ -142,6 +146,9 @@
             } else {
                 $("#btnRegist").addClass("hidden");
             }
+            if (userType != "A") {
+                $("#btnDownLoadAttach").addClass("hidden");
+            }
         }
         function fn_SearchChk() {
             if ($("#txtSDate").val() > $("#txtEDate").val()) {
@@ -169,9 +176,9 @@
                           },
                           {
                               "success": function (data) {
-                                  if (data != null && JSON.parse(data.body).length > 0) {
-                                      _data = JSON.parse(data.body);
-                                      fn_SetGrid(JSON.parse(data.body));
+                                  _data = JSON.parse(data.body);
+                                  if (data != null && _data.length > 0) {
+                                      fn_SetGrid(_data);
                                   } else {
                                       $.sa.alert("没有查询到数据！");
                                       _data = [];
@@ -543,6 +550,74 @@
               });
 
         }
+
+        function createSpinner() {
+            var opts = {
+                type: "Image",
+                imageUrl: "/images/ajax-loader.gif",
+                lines: 10, // loading小块的数量
+                length: 0, // 小块的长度
+                width: 18, // 小块的宽度
+                radius: 40, // 整个圆形的半径
+                corners: 1, // 小块的圆角，越大则越圆
+                rotate: 10, // loading动画的旋转度数，貌似没什么实际作用
+                color: '#047EC4', // 颜色
+                speed: 1, // 变换速度
+                trail: 60, // 余晖的百分比
+                shadow: false, // 是否渲染出阴影
+                hwaccel: false, // 是否启用硬件加速
+                className: 'spinner', // 给loading添加的css样式名
+                zIndex: 2e9, // The z-index (defaults to 2000000000)
+                top: '50%', // Top position relative to parent in px
+                left: '50%' // Left position relative to parent in px
+            };
+            var spinner = new Spinner(opts).spin(document.getElementById('loadBar'));
+
+            return spinner;
+        }
+        // add by 霍海涛   批量下载报备附件
+        function fn_downloadAttach() {
+            var sdate = $("#txtSDate").val().replace(/\-/gi, '');
+            var edate = $("#txtEDate").val().replace(/\-/gi, '');
+            var disId = $("#select_distributor_id").val();
+            var item = {
+                recordSDate: sdate, recordEDate: edate, userId: '@Context.Request.Cookies[SessionKeys.SESSION_USERID]', DisId: disId
+                             , approvalStatus: $("#select_approal_id").val(), recordType: $("#selRecordType").val()
+            };
+
+            var spinner = createSpinner();
+            var url = '/Record/DownloadAttachBatch?';
+            for (pro in item) {
+                url += pro + "=" + item[pro] + "&"
+            }
+            $.ajax({
+                type: "POST",
+                url: url,
+                contentType: false,
+                processData: false,
+                data: item,
+                beforeSend: function () {
+                    $("#modal-container-loadbar").css("display", "block");
+                    spinner.spin(document.getElementById('loadBar'));
+                },
+                success: function (data) {
+                    if (data.status) {
+                        window.location.href = data.zipFile;
+                    } else {
+                        $.sa.warning("下载失败." + data.errorMsg);
+                    }
+                },
+                complete: function () {
+                    spinner.stop();
+                    $("#modal-container-loadbar").css("display", "none");
+                },
+                error: function () {
+                    $.sa.warning("下载失败,请重试.");
+                }
+            });
+        }
+
+
         function border(cell, top, left, bottom, right) {
             //var light = 'ffded9d4';
             var light = 'ffffffff';
@@ -597,6 +672,9 @@
             </button>
             <button class="btn btn-primary" id="btnExcelDownLoad">
                 <span class="fa fa-file-excel-o gap-icon"></span>下载
+            </button>
+            <button class="btn btn-primary" id="btnDownLoadAttach">
+                <span class="fa fa-file-excel-o gap-icon"></span>批量下载报备附件
             </button>
         </div>
     </div>

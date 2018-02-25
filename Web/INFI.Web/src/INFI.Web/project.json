@@ -26,15 +26,12 @@
     "Microsoft.AspNetCore.Authentication.Cookies": "1.0.0",
     "System.IdentityModel.Tokens.Jwt": "5.0.0",
     "Savorboard.NPOI.Core.Ooxml": "1.1.1",
-    "System.Xml.ReaderWriter": "4.3.0"
-  },
-
+    "System.Xml.ReaderWriter": "4.3.0"  },
   "tools": {
     "BundlerMinifier.Core": "2.0.238",
     "Microsoft.AspNetCore.Razor.Tools": "1.0.0-preview2-final",
     "Microsoft.AspNetCore.Server.IISIntegration.Tools": "1.0.0-preview2-final"
   },
-
   "frameworks": {
     "netcoreapp1.0": {
       "imports": [
@@ -43,18 +40,15 @@
       ]
     }
   },
-
   "buildOptions": {
     "emitEntryPoint": true,
     "preserveCompilationContext": true
   },
-
   "runtimeOptions": {
     "configProperties": {
       "System.GC.Server": true
     }
   },
-
   "publishOptions": {
     "include": [
       "wwwroot",
@@ -67,8 +61,7 @@
       "web.config"
     ]
   },
-
-  "scripts": {
-    "postpublish": [ "dotnet publish-iis --publish-folder %publish:OutputPath% --framework %publish:FullTargetFramework%" ]
-  }
+    "scripts": {
+      "postpublish": [ "dotnet publish-iis --publish-folder %publish:OutputPath% --framework %publish:FullTargetFramework%" ]
+    }
 }
