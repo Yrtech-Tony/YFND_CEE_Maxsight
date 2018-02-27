@@ -65,6 +65,7 @@ namespace INFI.API.Service
             string AttachmentList = CommonHelper.Serializer(typeof(List<AttachmentMngDto>), param.AttachmentList);
             string spName = @"up_RMMT_REC_RecordInfoReg_C";
             DynamicParameters dp = new DynamicParameters();
+            dp.Add("@RecId", param.RId, DbType.Int32);
             dp.Add("@RecordType", param.RecordType, DbType.String);
             dp.Add("@RecordTitle", param.RecordTitle, DbType.String);
             dp.Add("@RecordReason", param.RecordReason, DbType.String);

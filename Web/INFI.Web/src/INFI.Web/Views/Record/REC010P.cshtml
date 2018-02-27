@@ -102,6 +102,14 @@
                 $("#divApprovalRemark").removeClass("hidden");
                 $("#divGrid2").removeClass("hidden");
                 if (_result == "C") {
+                    if (_userType == "S") {
+                        $("#sel_type_id").attr("disabled", false);
+                        $("#inputRecordTitle").attr("disabled", false);
+                        $("#txtRecordReason").attr("disabled", false);
+                        $("#container").removeClass("hidden");
+                        $("#btnSave").removeClass("hidden");
+                    }
+
                     if (_userType == "S" || _userType == "Z") {
                         $("#divAppealResult").addClass("hidden");
                         $("#divGrid2").addClass("hidden");
@@ -118,11 +126,20 @@
                         $("#container2").removeClass("hidden");
                     }
                 } else {
-                    $("#rdo2 input").attr("disabled", true);
-                    $("#txtApprovalRemark").attr("disabled", true);
-                    $("#divAppealResult").removeClass("hidden");
-                    $('#btnApproal').addClass("hidden");
-                    $("#container2").addClass("hidden");
+                    if (_userType == "A") {
+                        $("#txtApprovalRemark").attr("disabled", false);
+                        $("#rdo2 input").attr("disabled", false);
+                        $('#btnApproal').removeClass("hidden");
+                        $("#divAppealResult").removeClass("hidden");
+                        $("#divGrid2").removeClass("hidden");
+                        $("#container2").removeClass("hidden");
+                    } else {
+                        $("#rdo2 input").attr("disabled", true);
+                        $("#txtApprovalRemark").attr("disabled", true);
+                        $("#divAppealResult").removeClass("hidden");
+                        $('#btnApproal').addClass("hidden");
+                        $("#container2").addClass("hidden");
+                    }                   
                 }
                 fn_Search();
             }
@@ -170,6 +187,7 @@
         }
 
         function fn_Save() {
+            debugger
             if (!ValidationBeforeSave()) {
                 return;
             }
@@ -185,6 +203,7 @@
                     }
                     //$.sa.post(CUSTOMIZEDTASKCHECK,
                     var saveData = {
+                        RId:_rId,
                         //RecordType: $("#rdo input:checked").val()
                         RecordType: $("#sel_type_id").val()
                         , RecordTitle: $("#inputRecordTitle").val(), RecordReason: $("#txtRecordReason").val(), RecordUserId: "@Context.Request.Cookies[SessionKeys.SESSION_USERID]", AttachmentList: attachList
@@ -195,7 +214,7 @@
                          {
                              "success": function (data) {
                                  $.sa.alert('保存成功！');
-                                 window.parent.popcallback("success");
+                                 //window.parent.popcallback("success");
                              },
                              "failure": function (data) {
                                  $.sa.alert("保存失败");
@@ -339,7 +358,7 @@
                          cellattr: function (rowId, val, rawObject, cm, rdata) {
                              return 'class="readonlycell"';
                          },
-                         formatter: fn_DeleteFile, unformat: fn_UnDeleteFile, hidden: _aPId == 0 ? false : true
+                         formatter: fn_DeleteFile, unformat: fn_UnDeleteFile, hidden: (_aPId == 0||_result == "C") ? false : true
                      },
                      {
                          name: 'Url', hidden: true
@@ -419,7 +438,7 @@
                          cellattr: function (rowId, val, rawObject, cm, rdata) {
                              return 'class="readonlycell"';
                          },
-                         formatter: fn_DeleteFile2, unformat: fn_UnDeleteFile, hidden: _result == 0 ? false : true
+                         formatter: fn_DeleteFile2, unformat: fn_UnDeleteFile, hidden: (_result == 'C' || _userType=='A') ? false : true
                      },
                      {
                          name: 'Url', hidden: true
