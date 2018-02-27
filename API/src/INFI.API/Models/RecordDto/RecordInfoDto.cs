@@ -7,6 +7,7 @@ namespace INFI.API.Models.RecordDto
 {
     public class RecordInfoDto
     {
+        public int RId { get; set; }
         public string RecordType { get; set; }
         public string RecordTitle { get; set; }
         public string ApprovalStatus { get; set; }
