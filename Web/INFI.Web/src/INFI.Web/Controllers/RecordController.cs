@@ -47,7 +47,7 @@ namespace INFI.Web.Controllers
         {
             Task<IEnumerable<RecordItemDto>> result = GetRecordInfoList(userId, recordType, recordSDate, recordEDate, DisId, approvalStatus);
 
-            string downloads = Path.Combine(_environment.WebRootPath, "downloads");
+            string downloads = Path.Combine(@"d:\", "downloads");
             string timestamp = DateTime.Now.ToString("yyyyMMddHHmmssfff");
             string rootPath = Path.Combine(downloads, timestamp); 
 
@@ -56,18 +56,19 @@ namespace INFI.Web.Controllers
             {
                 int RId = recItemDao.RId;
                 string firstDic = recItemDao.DisCode.Trim() +"_"+ recItemDao.DisName.Trim();
-                string secondDic = recItemDao.RecordType.Trim() + "_" + recItemDao.RecordTitle.Trim();                
-                string localPath = Path.Combine(rootPath, firstDic, secondDic);               
+                string secondDic = recItemDao.RecordType.Trim();                
+                string localPath = Path.Combine(rootPath, firstDic, secondDic);
+
+                RecordInfoDto recInfoDto = GetRecordInSearch(RId).Result;
+                if (recInfoDto == null || recInfoDto.AttachmentList == null || recInfoDto.AttachmentList.Count == 0)
+                {
+                    continue;
+                }
 
                 if (!Directory.Exists(localPath))
                 {
                     Directory.CreateDirectory(localPath);
-                }
-                RecordInfoDto recInfoDto = GetRecordInSearch(RId).Result;
-                if(recInfoDto == null || recInfoDto.AttachmentList == null || recInfoDto.AttachmentList.Count==0)
-                {
-                    continue;
-                }
+                }                
                 foreach (AttachmentMngDto attach in recInfoDto.AttachmentList)
                 {
                     DownloadOSSFile(attach.Url, localPath, attach.AttachName.Trim());
@@ -81,7 +82,7 @@ namespace INFI.Web.Controllers
             //ZIP 
             string zipFile = Path.Combine(downloads, timestamp + ".zip");
             ZipFile.CreateFromDirectory(rootPath, zipFile);
-            Directory.Delete(rootPath, true);//打包后删除原文件夹
+            //Directory.Delete(rootPath, true);//打包后删除原文件夹
 
             return Json(new { ZipFile = zipFile.Replace(_environment.WebRootPath,""), Status = true });
         }
