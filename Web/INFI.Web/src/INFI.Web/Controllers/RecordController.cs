@@ -47,7 +47,7 @@ namespace INFI.Web.Controllers
         {
             Task<IEnumerable<RecordItemDto>> result = GetRecordInfoList(userId, recordType, recordSDate, recordEDate, DisId, approvalStatus);
 
-            string downloads = Path.Combine(@"d:\", "downloads");
+            string downloads = Path.Combine(_environment.WebRootPath, "downloads");
             string timestamp = DateTime.Now.ToString("yyyyMMddHHmmssfff");
             string rootPath = Path.Combine(downloads, timestamp); 
 
