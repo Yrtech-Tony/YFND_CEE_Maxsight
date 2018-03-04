@@ -85,7 +85,7 @@ namespace INFI.API.Service
                     catch (Exception ex)
                     {
                         tran.Rollback();
-                        return new APIResult { Body = "", ResultCode = ResultType.Failure, Msg = ex.Message };
+                        return new APIResult { Body = "", ResultCode = ResultType.Failure, Msg = ex.Message+" "+param.RId +" "+dp};
                     }
                     finally
                     {
