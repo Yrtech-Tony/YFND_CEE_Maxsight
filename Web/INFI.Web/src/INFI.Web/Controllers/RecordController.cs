@@ -8,6 +8,7 @@ using System.IO;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.AspNetCore.Hosting;
 using System.IO.Compression;
+using System.Diagnostics;
 
 // For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -54,8 +55,8 @@ namespace INFI.Web.Controllers
             foreach(RecordItemDto recItemDao in result.Result)
             {
                 int RId = recItemDao.RId;
-                string firstDic = recItemDao.DisCode +"_"+ recItemDao.DisName;
-                string secondDic = recItemDao.RecordType + "_" + recItemDao.RecordTitle;                
+                string firstDic = recItemDao.DisCode.Trim() +"_"+ recItemDao.DisName.Trim();
+                string secondDic = recItemDao.RecordType.Trim() + "_" + recItemDao.RecordTitle.Trim();                
                 string localPath = Path.Combine(rootPath, firstDic, secondDic);               
 
                 if (!Directory.Exists(localPath))
@@ -69,7 +70,7 @@ namespace INFI.Web.Controllers
                 }
                 foreach (AttachmentMngDto attach in recInfoDto.AttachmentList)
                 {
-                    DownloadOSSFile(attach.Url, localPath, attach.AttachName);
+                    DownloadOSSFile(attach.Url, localPath, attach.AttachName.Trim());
                     hasAttach = true;
                 }
             }
@@ -142,6 +143,10 @@ namespace INFI.Web.Controllers
             {
                 fs = new FileStream(fileName, FileMode.Create);
                 fs.Write(bytes,0, bytes.Length);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
             }
             finally
             {
