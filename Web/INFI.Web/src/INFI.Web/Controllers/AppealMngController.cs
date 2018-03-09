@@ -20,7 +20,7 @@ namespace INFI.Web.Controllers
         }
         public IActionResult APP020()
         {
-            ViewBag.StartDate = new DateTime(DateTime.Now.Year, 4, 1).ToString("yyyy-MM-dd");
+            ViewBag.StartDate = new DateTime(DateTime.Now.Year, 1, 1).ToString("yyyy-MM-dd");
             ViewBag.NowDate = DateTime.Now.ToString("yyyy-MM-dd");
             return View();
         }
