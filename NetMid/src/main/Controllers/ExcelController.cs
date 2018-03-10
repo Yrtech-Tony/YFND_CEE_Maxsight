@@ -14,6 +14,7 @@ using System;
 using System.IO;
 using System.Net.Http;
 using System.Configuration;
+using NetMidApi.Common;
 
 namespace NetMidApi.Controllers
 {
@@ -42,6 +43,8 @@ namespace NetMidApi.Controllers
         [HttpPost]
         public async Task<IHttpActionResult> List([FromBody]ExcelDto excelDto)
         {
+            Utils.log("start list");
+            Utils.log("excelDto.FullFileName:"+excelDto.FullFileName);
             try
             {
                 if (excelDto == null)
@@ -65,6 +68,7 @@ namespace NetMidApi.Controllers
                 }
                 return OkEx(await _excelService.ParseList(excelDto.FullFileName, sheetList));
             }catch(Exception ex){
+                Utils.log(ex.ToString());
                 return ErrorEx(ex.ToString());
             }            
         }
