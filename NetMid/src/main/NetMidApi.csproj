@@ -111,6 +111,7 @@
   <ItemGroup>
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Common\ApiPack\ControllerExtension.cs" />
+    <Compile Include="Common\Utils.cs" />
     <Compile Include="Controllers\ExcelController.cs" />
     <Compile Include="Controllers\PingController.cs" />
     <Compile Include="Global.asax.cs">
