@@ -43,3 +43,42 @@ C:\Program Files (x86)\Jenkins\workspace\prd_netmid_api\src\main\bin\normnfkd.nl
 C:\Program Files (x86)\Jenkins\workspace\prd_netmid_api\src\main\obj\Release\NetMidApi.csprojResolveAssemblyReference.cache
 C:\Program Files (x86)\Jenkins\workspace\prd_netmid_api\src\main\obj\Release\NetMidApi.dll
 C:\Program Files (x86)\Jenkins\workspace\prd_netmid_api\src\main\obj\Release\NetMidApi.pdb
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\roslyn\csc.exe
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\roslyn\Microsoft.Build.Tasks.CodeAnalysis.dll
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\roslyn\Microsoft.CodeAnalysis.CSharp.dll
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\roslyn\Microsoft.CodeAnalysis.dll
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\roslyn\Microsoft.CodeAnalysis.VisualBasic.dll
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\roslyn\Microsoft.CSharp.Core.targets
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\roslyn\Microsoft.VisualBasic.Core.targets
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\roslyn\System.Collections.Immutable.dll
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\roslyn\System.Reflection.Metadata.dll
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\roslyn\vbc.exe
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\roslyn\VBCSCompiler.exe
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\roslyn\VBCSCompiler.exe.config
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\NetMidApi.dll.config
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\NetMidApi.dll
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\NetMidApi.pdb
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\Aliyun.OSS.dll
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\Dapper.dll
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.dll
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\Newtonsoft.Json.dll
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\SimpleInjector.dll
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\SimpleInjector.Extensions.ExecutionContextScoping.dll
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\SimpleInjector.Integration.WebApi.dll
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\System.Net.Http.Formatting.dll
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\System.Threading.Tasks.Dataflow.dll
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\System.Web.Http.dll
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\System.Web.Http.WebHost.dll
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\Dapper.xml
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.xml
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\SimpleInjector.xml
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\SimpleInjector.Extensions.ExecutionContextScoping.xml
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\SimpleInjector.Integration.WebApi.xml
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\System.Threading.Tasks.Dataflow.xml
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\Newtonsoft.Json.xml
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\System.Net.Http.Formatting.xml
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\System.Web.Http.xml
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\bin\System.Web.Http.WebHost.xml
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\obj\Release\NetMidApi.csprojResolveAssemblyReference.cache
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\obj\Release\NetMidApi.dll
+D:\hhtwork\myprojects\Infiniti\YFND_CEE_Maxsight\NetMid\src\main\obj\Release\NetMidApi.pdb

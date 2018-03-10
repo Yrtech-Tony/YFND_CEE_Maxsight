@@ -54,7 +54,5 @@ namespace NetMidApi.Service
                 return await Task.Factory.StartNew(() => JsonConvert.SerializeObject(sheetListJson));
             }
         }
-
-
     }
 }

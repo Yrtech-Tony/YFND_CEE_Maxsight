@@ -42,27 +42,31 @@ namespace NetMidApi.Controllers
         [HttpPost]
         public async Task<IHttpActionResult> List([FromBody]ExcelDto excelDto)
         {
+            try
+            {
+                if (excelDto == null)
+                {
+                    return BadRequestEx("FullFileName,SheetNameList");
+                }
+                else if (string.IsNullOrWhiteSpace(excelDto.FullFileName))
+                {
+                    return BadRequestEx("FullFileName");
+                }
+                else if (string.IsNullOrWhiteSpace(excelDto.SheetNameList))
+                {
+                    return BadRequestEx("SheetNameList");
+                }
 
-            if (excelDto==null)
-            {
-                return BadRequestEx("FullFileName,SheetNameList");
-            }
-            else if (string.IsNullOrWhiteSpace(excelDto.FullFileName))
-            {
-                return BadRequestEx("FullFileName");
-            }
-            else if (string.IsNullOrWhiteSpace(excelDto.SheetNameList))
-            {
-                return BadRequestEx("SheetNameList");
-            }
+                IEnumerable<string> sheetList = JsonConvert.DeserializeObject<IEnumerable<string>>(excelDto.SheetNameList);
 
-            IEnumerable<string> sheetList = JsonConvert.DeserializeObject<IEnumerable<string>>(excelDto.SheetNameList);
-
-            if (sheetList==null)
-            {
-                return BadRequestEx("SheetNameList");
-            }
-            return OkEx(await _excelService.ParseList(excelDto.FullFileName, sheetList));
+                if (sheetList == null)
+                {
+                    return BadRequestEx("SheetNameList");
+                }
+                return OkEx(await _excelService.ParseList(excelDto.FullFileName, sheetList));
+            }catch(Exception ex){
+                return ErrorEx(ex.ToString());
+            }            
         }
         [HttpPost]
         public string UploadToOss([FromBody]OssForIosDto obj)
