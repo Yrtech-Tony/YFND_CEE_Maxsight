@@ -9,6 +9,7 @@ namespace INFI.API.Models.PlanTaskMngDto
     {
         public string Id { get; set; }//计划标题ID
         public string Title { get; set; }//计划任务标题
+        public string Code { get; set; }//经销商
         public string Name { get; set; }//经销商
         public string VisitDateTime { get; set; }//拜访时间
         public string VisitType { get; set; }//拜访类型
@@ -27,5 +28,6 @@ namespace INFI.API.Models.PlanTaskMngDto
         public string SourceCode { get; set; }//来源Code
         public string SourceName { get; set; }//来源名
         public string LastDate { get; set; }//最后一次更新时间
+        public string TPId { get; set; } // add by tony for excel download
     }
 }
