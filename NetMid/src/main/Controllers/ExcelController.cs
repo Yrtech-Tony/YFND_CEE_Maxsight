@@ -40,6 +40,13 @@ namespace NetMidApi.Controllers
             }
             return OkEx(await _excelService.ParseOne(fullFileName, sheetName));
         }
+        public async Task<IHttpActionResult> GetList(string FullFileName)
+        {
+            Utils.log("start list");
+            Utils.log("excelDto.FullFileName:" + FullFileName);
+            return null;
+        }
+
         [HttpPost]
         public async Task<IHttpActionResult> List([FromBody]ExcelDto excelDto)
         {
