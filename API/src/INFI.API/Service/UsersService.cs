@@ -22,7 +22,9 @@ namespace INFI.API.Service
         Task<APIResult> GetEmployeeInfo(string DisId, string DepartId, string UserType, string UserName, string UseYN);
         Task<APIResult> UpdatePsw(ParamEmpPswDto user);
         Task<APIResult> GetDistributorInfo(string DisId, string UseYN);
+        Task<APIResult> GetDistributorInfo2(string DisId, string Type, string UseYN);
         Task<APIResult> SaveDistributorInfo(ParamDisInfoDto disInfoDto);
+        Task<APIResult> SaveDistributorInfo2(ParamDisInfoDto2 disInfoDto);
         Task<APIResult> GetOrgInfo(string UserId);
         Task<APIResult> GetPushInfo();
         Task<APIResult> GetGroupList();
@@ -241,7 +243,34 @@ namespace INFI.API.Service
                 }
             }
         }
+        public async Task<APIResult> GetDistributorInfo2(string DisId, string Type, string UseYN)
+        {
+            string spName = @"up_RMMT_BAS_AreaInfo_R";
+            DynamicParameters dp = new DynamicParameters();
+            dp.Add("@DisId", DisId == null ? "" : DisId);
+            dp.Add("@Type", Type == null ? "" : Type);
+            dp.Add("@UseYN", UseYN == null ? "" : UseYN);
 
+            using (var conn = new SqlConnection(DapperContext.Current.SqlConnection))
+            {
+                conn.Open();
+                try
+                {
+                    IEnumerable<DistributorDto> list = await conn.QueryAsync<DistributorDto>(spName, dp, null, null, CommandType.StoredProcedure);
+                    string message = "";
+                    if (list.Count() == 0)
+                    {
+                        message = "没有数据";
+                    }
+                    APIResult result = new APIResult { Body = CommonHelper.EncodeDto<DisInfoDto>(list), ResultCode = ResultType.Success, Msg = message };
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    return new APIResult { Body = "", ResultCode = ResultType.Success, Msg = ex.Message }; ;
+                }
+            }
+        }
         public async Task<APIResult> SaveDistributorInfo(ParamDisInfoDto disInfoDto)
         {
             try
@@ -249,6 +278,35 @@ namespace INFI.API.Service
                 string spName = @"up_RMMT_BAS_InsertDistributorInfo_S";
 
                 string XmlData = CommonHelper.Serializer(typeof(List<DisInfoDto>), disInfoDto.XmlData);
+                DynamicParameters dp = new DynamicParameters();
+                dp.Add("@XmlData", XmlData);
+                dp.Add("@UserId", disInfoDto.UserId);
+
+                using (var conn = new SqlConnection(DapperContext.Current.SqlConnection))
+                {
+                    conn.Open();
+                    using (var tran = conn.BeginTransaction(System.Data.IsolationLevel.ReadCommitted))
+                    {
+
+                        await conn.ExecuteAsync(spName, dp, tran, null, CommandType.StoredProcedure);
+                        tran.Commit();
+                    }
+                }
+                return new APIResult { Body = "", ResultCode = ResultType.Success, Msg = "" };
+            }
+            catch (Exception ex)
+            {
+                return new APIResult { Body = "", ResultCode = ResultType.Failure, Msg = ex.Message };
+            }
+        }
+
+        public async Task<APIResult> SaveDistributorInfo2(ParamDisInfoDto2 disInfoDto)
+        {
+            try
+            {
+                string spName = @"up_RMMT_BAS_InsertAreaInfo_S";
+
+                string XmlData = CommonHelper.Serializer(typeof(List<DistributorDto>), disInfoDto.XmlData);
                 DynamicParameters dp = new DynamicParameters();
                 dp.Add("@XmlData", XmlData);
                 dp.Add("@UserId", disInfoDto.UserId);

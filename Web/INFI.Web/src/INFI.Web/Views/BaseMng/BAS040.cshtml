@@ -1,0 +1,502 @@
+﻿@{
+    Layout = "_LayoutMenu";
+    ViewData["Title"] = "小区管理";
+}
+@section HeadCss{
+    <style>
+        .gap-icon {
+            margin-right: 5px;
+        }
+
+        #selZionLst.orgWidth, #selAreaLst.orgWidth,
+        #selServerLst.orgWidth, #selDepartmentLst.orgWidth, #selRepLst.orgWidth, #selBusLst.orgWidth {
+            width: 25%;
+        }
+    </style>
+}
+@section Scripts{
+    <!-- 1. Load -->
+    <script type="text/javascript">
+        var _grid, _gridName;
+        var  busList = '';
+        var repList =[];
+        $(document).ready(function () {
+            departmentLst = '@Context.Request.Cookies[SessionKeys.SESSION_DEPARTMENTLIST]'.replace(/&quot;/g, '"');
+            fn_Initial();
+            fn_InitialData();
+            fn_GridInit();
+        });
+    </script>
+    <!-- 2. Init -->
+    <script type="text/javascript">
+        function fn_Initial() {
+            _gridName = 'grid';
+            _grid = $('#' + _gridName);
+            $('#btnSearch').on('click', function () {
+                fn_SearchData();
+            });
+            $('#btnSave').on('click', function () {
+                fn_SaveDisInfo();
+            });
+            $("#selBusLst").change(function () {
+                fn_SetRepData();
+            });
+            $("#selRepLst").change(function () {
+                fn_SetZoneData();
+            });
+            $("#btnAddDis").click(function () {
+                fn_Addrow();
+            });
+            $("#btnRemoveDis").click(function () {
+                fn_Delrow();
+            });
+            $("#btnExcelDown").on("click", function () {
+                document.getElementById("a").click();
+            });
+            $("#btnExcelUpload").on("click", function () {
+                $("#files").val("");
+                $('#files').click();
+            });
+            $("#files").change(function () {
+                $("#fileText").val($(this).val());
+                $("#upload").click();
+            });
+        }
+    </script>
+    <!-- 3. InitData -->
+    <script type="text/javascript">
+        function fn_InitialData() {
+            $.sa.get(
+                 GETORGINFO
+                , { UserId: '@Context.Request.Cookies[SessionKeys.SESSION_USERID]' },
+              {
+                  "success": function (data) {
+                      busList=data.body;
+                      $("#selBusLst").html(JsonToCboList("BName", "BId", JSON.parse(busList), { 'SelectType': 'All' }));
+                      $("#selRepLst").html(JsonToCboList("EName", "EId", null, { 'SelectType': 'All' }));
+                      $("#selZionLst").html(JsonToCboList("QName", "QId", null, { 'SelectType': 'All' }));
+                      fn_SetRepData();
+                      fn_SetZoneData();
+                  },
+                  "failure": function (data, statusText, jqXHR) {
+                  }
+              });
+        }
+        //大区
+        function fn_SetRepData() {
+            var currentBus = $("#selBusLst").val();
+            $("#selRepLst").html(JsonToCboList("EName", "EId", null, { 'SelectType': 'All' }));
+            $.each(JSON.parse(busList), function (i, v) {
+                if (v.BId == currentBus) {
+                    $("#selRepLst").html(JsonToCboList("EName", "EId", v.RepList, { 'SelectType': 'All' }));
+                }
+            });
+            fn_SetZoneData();
+        }
+        //区域
+        function fn_SetZoneData() {
+            var currentBus = $("#selBusLst").val();
+            var currentRep = $("#selRepLst").val();
+            var data =JSON.parse(busList);
+            for (var i = 0; i < data.length; i++) {
+                if (data[i].BId ==currentBus ) {
+                    repList =  data[i].RepList;
+                    break;
+                }
+            }
+            $("#selZionLst").html(JsonToCboList("QName", "QId", null, { 'SelectType': 'All' }));
+            $.each(repList, function (i, v) {
+                if (v.EId == currentRep) {
+                    $("#selZionLst").html(JsonToCboList("QName", "QId", v.ZionList, { 'SelectType': 'All' }));
+                }
+            });
+        }
+    </script>
+    <!--Save-->
+    <script type="text/javascript">
+        function fn_SaveDisInfo() {
+            fn_SaveCell.call(_grid);
+            editData = _grid.getChangedCells('all');
+            if (fn_SaveValidate(editData)) {
+                var confirmDialog = $.sa.confirm('是否要保存？', {
+                    fnOk: fn_Save
+                });
+            }
+        }
+        function fn_SaveValidate() {
+            var isVali = true;
+            var isValiCode = true;
+            if (editData.length <= 0) {
+                $.sa.warning("没有需要保存的数据。");
+                return false;
+            }
+            $(editData).each(function () {
+                if (this.Code == "") {
+                    isValiCode = false;
+                }
+            });
+            $(editData).each(function () {
+                if (this.Name == "") {
+                    isVali = false;
+                }
+            });
+            if (!isValiCode) {
+                $.sa.warning("请输入正确的小区编号。");
+            } else if (!isVali) {
+                $.sa.warning("请输入正确的小区名称。");
+            }
+            return isVali & isValiCode;
+        }
+        function fn_Save() {
+            $(".close").click();
+            $(editData).each(function () {
+                this.Id = '0';
+                this.Type='Z';
+                this.ParentId = $("#selZionLst").val();
+                delete this.id;
+                delete this.rn;
+            });
+            var param = { XmlData: editData, UserId: '@Context.Request.Cookies[SessionKeys.SESSION_USERID]' };
+            $.sa.post(
+             SAVEDISTRIBUTORINFO2,
+                JSON.stringify(param),
+                     {
+                         "success": function (data) {
+                             if (data != null) {
+                                 $.sa.warning("保存成功！");
+                                 fn_SearchData();
+                             } else {
+                                 $.sa.warning("保存失败！");
+                             }
+                         },
+                         "failure": function (data, statusText, jqXHR) {
+                         }
+                     }
+                     , $("body"));
+        }
+    </script>
+    <!--Grid & Event-->
+    <script type="text/javascript">
+        function fn_GridInit() {
+            _grid.jqGrid({
+                datatype: 'local',
+                colModel: [
+                    {
+                        name: 'Id', label: '小区ID', width: 30, align: 'center',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },
+                   {
+                       name: 'Code', label: '小区编号', width: 60, editable: true, edittype: "text", align: 'left'
+                   },
+                   {
+                       name: 'Name', label: '小区名称', width: 70, editable: true, edittype: "text", align: 'left'
+                   },
+                   {
+                       name: 'InDateTime', label: '创建日期', width: 45, align: 'center',
+                       formatter:"date", formatoptions: {newformat:'Y-m-d'},
+                       cellattr: function (rowId, val, rawObject, cm, rdata) {
+                           return 'class="readonlycell"';
+                       }
+                   },
+                   {
+                       name: 'UseYN', label: '使用与否', width: 35, align: 'center',
+                       formatter: 'checkbox', formatoptions: { disabled: false }, editoptions: { value: 'True:False' }
+                   }
+                ],
+                width: $('#Grid').width(),
+                height: 'auto',
+                rownumbers: true,
+                multiselect: true,
+                rownumWidth: 50,
+                rowNum: 15,
+                rowList: [15, 30, 100],
+                footerrow: false,
+                cellsubmit: 'clientArray',
+                pager: jQuery('#pager'),
+                cellEdit: true,
+                editurl: 'clientArray',
+                viewrecords: true,
+                afterInsertRow: function (rowid, r) {
+                    if (r.Id !="") {
+                        $(this).find('#' + rowid).find("[aria-describedby='Code']").addClass("readonlycell");
+                        $(this).find('#' + rowid).find("[aria-describedby='Name']").addClass("readonlycell");
+                    }
+                },
+                gridComplete: function (id) {
+                    var rowNum = parseInt($(this).getGridParam("records"), 50);
+                    if (rowNum > 0) {
+                        $(".ui-jqgrid-sdiv").show();
+                    }
+                    else {
+                        $(".ui-jqgrid-sdiv").hide();
+                    }
+
+                    //fix the pager position
+                    $('#pager_left').css('width', '25%');
+                    $('#pager_right').css('width', '25%');
+                    $(_grid).find("input[type=checkbox][offval]").click(function () {
+                        var event = arguments[0] || window.event;
+                        $(event.target).closest('tr').addClass("edited");
+                        $(event.srcElement).closest('tr').addClass("edited");
+                    });
+
+                    $("[aria-describedby='grid_rn']").addClass("readonlycell");
+                },
+                beforeEditCell: function (rowid, cellname, v, iRow, iCol) {
+                    var $t = $(this);
+                    var Id = $t.getCell(rowid, 'Id');
+                    if (Id != "") {
+                        setTimeout(function () {
+                            $t.restoreCell(rowid, cellname);
+                        }, 1);
+                    }
+                }
+            });
+        }
+        function fn_SetGrid(mydata) {
+            mydata = mydata || [];
+            _grid.clearGridData()
+            .setGridParam({
+                data: mydata
+            }).trigger('reloadGrid');
+        }
+        function fn_SaveCell() {
+            var $t = $(this);
+            var $ecs = $(".edit-cell", $t);
+            $ecs.each(function (idx, ec) {
+                var iRow = $(ec).parent().index();
+                var iCol = $(ec).index();
+                $t.saveCell(iRow, iCol);
+            });
+        }
+
+        function fn_Addrow() {
+            var ids = _grid.getDataIDs();
+            var pref = $.jgrid.uidPref;
+            var newid = 1;
+            if ($("#selBusLst").val() == "0") {
+                $.sa.warning("请先选择业务分区", {
+                    fnClose: function () {
+                        $("#selBusLst").focus();
+                    }
+                });
+                return;
+            }else if ($("#selRepLst").val() == "0") {
+                $.sa.warning("请先选择大区", {
+                    fnClose: function () {
+                        $("#selRepLst").focus();
+                    }
+                });
+                return;
+            }else if ($("#selZionLst").val() == "0") {
+                $.sa.warning("请先选择区域", {
+                    fnClose: function () {
+                        $("#selZionLst").focus();
+                    }
+                });
+                return;
+            }
+
+            if (ids && ids.length > 0) {
+                var regx = new RegExp(pref, 'g');
+                var nids = ids.join(',').replace(regx, '').split(',');
+                var maxid = Math.max.apply(Math, nids);
+                newid = maxid + 1;
+            }
+            newid = pref + (newid).toString();
+            var rowdata = {
+                Id: '',
+                ParentId: $("#selBusLst").val(),
+                Code: "",
+                Type:'Z',
+                Name: '',
+                UseYN: 'True',
+            };
+            _grid.addRowData(newid, rowdata, 'last');
+            $(_grid.getGridRowById(newid)).addClass("edited");
+        }
+
+        function fn_Delrow() {
+            var ids = _grid.jqGrid('getGridParam', 'selarrrow');
+            if (ids.length <= 0) {
+                $.sa.warning("请选择要删除的行。", {
+                    fnClose: function () {
+                        $("#selZionLst").focus();
+                    }
+                });
+                return;
+            }
+            for (var i = ids.length - 1; i >= 0; i--) {
+                if (_grid.getCell(ids[i], "SDisId") != "") {
+                    _grid.setCell(ids[i], "UseYN", "Flase");
+                    $(_grid.getGridRowById(ids[i])).addClass("edited");
+                }
+                else {
+                    _grid.delRowData(ids[i]);
+                }
+            }
+        }
+    </script>
+    <!--Search-->
+    <script type="text/javascript">
+        function fn_SearchData() {
+            var disId = "";
+            if ($("#selZionLst").val() != '0') {
+                disId = $("#selZionLst").val();
+            }else if ($("#selRepLst").val() !="0") {
+                disId = $("#selRepLst").val();
+            }else if ($("#selBusLst").val() !="0") {
+                disId = $("#selBusLst").val();
+            }
+            $.sa.get(
+                GETDISTRIBUTORINFO2
+                , {
+                    DisId: disId,
+                    Type:"Z",
+                    UseYN: $("[name=UseYN]").filter(":Checked").val()
+                },
+            {
+                "success": function (data) {
+                    if (data != null) {
+                        fn_SetGrid(eval(data.body));
+                        $.sa.alert('查询完毕', { maxWidth: '400px', minWidth: '300px', showClose: false });
+                    }
+                },
+                "failure": function (data, statusText, jqXHR) {
+                }
+            }
+            , $("body"));
+        }
+    </script>
+    <!--Upload-->
+    <script type="text/javascript">
+        $("#upload").click(function (evt) {
+            var fileUpload = $("#files").get(0);
+            var files = fileUpload.files;
+            var data = new FormData();
+            for (var i = 0; i < files.length ; i++) {
+                data.append(files[i].name, files[i]);
+            }
+            $.ajax({
+                type: "POST",
+                url: "/BaseMng/UploadDealers",
+                contentType: false,
+                processData: false,
+                data: data,
+                success: function (message) {
+                    if (JSON.parse(message).Success == true) {
+                        fn_ExcelUpload(message);
+                    } else {
+                        $.sa.warning("上传失败,请重试.");
+                    }
+                },
+                error: function () {
+                    $.sa.warning("上传失败,请重试.");
+                }
+            });
+        });
+        function fn_ExcelUpload(obj) {
+            var dealerList=JSON.parse(JSON.parse(obj).Result).Dealers;
+            dealerList.splice(0,1);
+            var item = {InUserId:@Context.Request.Cookies[SessionKeys.SESSION_USERID],DisList:dealerList};
+            //$.sa.post('http://localhost:6505/fiat/api/v1/Statistic/InsertAfterSalesDataByExcel',
+            $.sa.post(INSERTDEALERS,
+                          JSON.stringify(item),
+                          {
+                              "success": function (data) {
+                                  if (data != null && data.msg == "") {
+                                      $.sa.warning("上传成功！");
+                                      fn_SetGrid(eval(data.body));
+                                  } else {
+                                      $.sa.warning("上传失败！");
+                                      //fn_SetGrid("");
+                                  }
+                              },
+                              "failure": function (data, statusText, jqXHR) {
+                                  //fn_SetGrid("");
+                                  $.sa.warning(data.msg);
+                              }
+                          }, $("body"));
+        }
+    </script>
+}
+
+<div class="row gap-top">
+    <div class="col-md-12">
+        <span class="fa fa-flag fa-lg gap-icon"></span><span class="page-mtitle">基础设置</span><span>&nbsp;>&nbsp;</span>
+        <span class="page-title">小区管理</span>
+        <div class="pull-right">
+            <button class="btn btn-primary" id="btnSearch">
+                <span class="fa fa-search gap-icon"></span>查询
+            </button>
+            <button id="btnSave" class="btn btn-primary">
+                <span class="fa fa-save gap-icon"></span>保存
+            </button>
+        </div>
+    </div>
+</div>
+<form method="post" enctype="multipart/form-data">
+    <div class="form-group">
+        <div class="col-md-0" id="divfile">
+            <input id="files" name="files" type="file" style="display:none" />
+            <input id="fileText" type="text" class="form-control" style="display:none" />
+        </div>
+        <div class="col-md-0">
+            <input type="button" id="upload" class="btn btn-primary" value="Excel上传" style="display:none;" />
+        </div>
+    </div>
+</form>
+<div class="row gap-top">
+    <div class="col-md-12">
+        <div class="input-group">
+            <span class="input-group-addon title-sm">组织结构</span>
+            <select class="form-control" style="width:33%" id="selBusLst"></select><!--营销区，客户服务区-->
+            <select class="form-control" style="width:33%" id="selRepLst"></select><!--大区-->
+            <select class="form-control" style="width:33%" id="selZionLst"></select><!--区域-->
+        </div>
+    </div>
+
+</div>
+<div class="row gap-top">
+    <div class="col-md-6">
+        <div class="input-group">
+            <span class="input-group-addon title-sm">使用与否</span>
+            <div class="form-control" id="rdo">
+                <label class="radio-inline">
+                    <input type="radio" name="UseYN" id="fullAttend" value="A" checked />
+                    全部
+                </label>
+                <label class="radio-inline">
+                    <input type="radio" name="UseYN" id="continuousAttend" value="1" />
+                    使用
+                </label>
+                <label class="radio-inline">
+                    <input type="radio" name="UseYN" id="continuousAttend" value="0" />
+                    不使用
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row gap-top">
+    <div class="col-md-12 col-sm-12">
+        <div class="pull-right">
+            <button class="btn btn-primary" id="btnAddDis">
+                <span class="fa fa-plus gap-icon"></span>添加小区
+            </button>
+            <button class="btn btn-primary" id="btnRemoveDis">
+                <span class="fa fa-minus gap-icon"></span>删除小区
+            </button>
+        </div>
+    </div>
+</div>
+<div class="row gap-top">
+    <div id="Grid" class="col-md-12">
+        <table id="grid" class="ui-jqgrid-htable"></table>
+        <div id="pager" class="page">
+        </div>
+    </div>
+</div>

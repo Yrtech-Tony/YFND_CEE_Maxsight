@@ -44,6 +44,12 @@ namespace INFI.Web.Controllers
         {
             return View();
         }
+
+        [PermissionRequired]
+        public IActionResult BAS040()
+        {
+            return View();
+        }
         [HttpPost]
         public async Task<ActionResult> UploadDealers()
         {

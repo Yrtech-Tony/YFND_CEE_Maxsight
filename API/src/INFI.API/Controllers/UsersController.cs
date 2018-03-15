@@ -56,11 +56,23 @@ namespace INFI.API.Controllers
         {
             return _usersService.GetDistributorInfo(DisId, UseYN);
         }
+        [HttpGet]
+        [ActionName("GetDistributorInfo2")]
+        public Task<APIResult> GetDistributorInfo2(string DisId, string Type, string UseYN)
+        {
+            return _usersService.GetDistributorInfo2(DisId, Type, UseYN);
+        }
         [HttpPost]
         [ActionName("SaveDistributorInfo")]
         public Task<APIResult> SaveDistributorInfo([FromBody]ParamDisInfoDto disInfoDto)
         {
             return _usersService.SaveDistributorInfo(disInfoDto);
+        }
+        [HttpPost]
+        [ActionName("SaveDistributorInfo2")]
+        public Task<APIResult> SaveDistributorInfo2([FromBody]ParamDisInfoDto2 disInfoDto)
+        {
+            return _usersService.SaveDistributorInfo2(disInfoDto);
         }
         [HttpGet]
         [ActionName("GetOrgInfo")]
@@ -106,6 +118,7 @@ namespace INFI.API.Controllers
         {
             return _usersService.SaveDealerList(paramDto);
         }
+
 
     }
 }

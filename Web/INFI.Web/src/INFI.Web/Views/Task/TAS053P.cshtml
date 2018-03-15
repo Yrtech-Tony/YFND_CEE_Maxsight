@@ -34,6 +34,9 @@
             $("#btnAadd").on("click", function () {
                 fn_addStaCardRow("");
             });
+            $("#btnAExport").on("click", function () {
+                fn_exportStaCard();
+            });
             $("#btnAddCheckStandard").on("click", function () {
                 fn_addCS();
             });
@@ -52,8 +55,114 @@
             //fn_Search();
         }
     </script>
+    <!--Excel 下载-->
+    <script src="../js/excel/FileSaver.js"></script>
+    <script src="../js/excel/jszip.min.js"></script>
+    <script src="../js/excel/xlsx.js"></script>
+    <script type="text/javascript">
+        function fn_exportStaCard() {
+            var tcid = '@ViewBag.TCId';
+            $.sa.get(GETTASKCARDDTLLIST,
+                               { TCId: tcid },
+                               {
+                                   "success": function (data) {
+                                       if (data != null) {
+                                           var _data = JSON.parse(data.body);
+
+                                           var file = new xlsx.File();
+                                           var sheet = file.addSheet('体系');
+                                           sheet.setColWidth(2, 3, 50);
+
+                                           var titles = ["体系ID", "执行顺序", "指标名称"];
+                                           SetExcelSHeaderR_o(sheet, titles);
+
+                                           for (i in _data[0].TIList) {
+                                               var item = _data[0].TIList[i];
+                                               var r = sheet.addRow();
+                                               r.isCustom = false;
+                                               SetCellText_o(r, item.TIId, 9, false, 'center');
+                                               SetCellText_o(r, item.SeqNo, 9, false, 'center');
+                                               SetCellText_o(r, item.Title, 9, false, 'center');
+                                           }
+                                           var time = new Date().Format("yyyyMMddhhmmss");
+                                           var reportname = "体系_" + tcid + '_' + time;
+                                           var now = reportname + ".xlsx";
+                                           file.saveAs('blob')
+                                             .then(function (content) {
+                                                 saveAs(content, now);
+                                             });
+                                       }
+                                   },
+                                   "failure": function (data, statusText, jqXHR) {
+                                       $.sa.warning(data.msg);
+                                   }
+                               }, $("body"));
+
+        }
+
+        function SetExcelSHeaderR_o(sheet, d) {
+            var r = sheet.addRow();
+            r.isCustom = false;
+            for (var i = 0; i < d.length; i++) {
+                SetCellTitle_o(r, d[i], 10, true, 'center');
+            }
+        }
+
+        function setAlignStyle(cell, v, h) {
+            cell.style.align.v = v;
+            cell.style.align.h = h;
+            cell.style.align.wrapText = true;
+            cell.style.align.shrinkToFit = true;
+        }
+        function setFontStyle(cell, size, byn, c) {
+            cell.style.font.name = "微软雅黑";
+            cell.style.font.size = size;
+            cell.style.font.bold = byn;
+            cell.style.font.color = '#555555';
+        }
+        function setborder(cell, top, left, bottom, right) {
+            var light = 'ffffffff';
+            var dark = 'ff7e6a54';
+            cell.style.border.top = 'thin';//'medium'//cell.style.applyBorder = true;
+            cell.style.border.topColor = top ? dark : light;
+            cell.style.border.left = 'thin';
+            cell.style.border.leftColor = left ? dark : light;
+            cell.style.border.bottom = 'thin';
+            cell.style.border.bottomColor = bottom ? dark : light;
+            cell.style.border.right = 'thin';
+            cell.style.border.rightColor = right ? dark : light;
+        }
+        function fill(cell, type) {
+            type = type || 0;
+            var colors = ['ffffffff', 'ffa2917d', 'ffe4e2de', 'fffff8df', 'fff1eeec', '74a3d2'];
+            // 1: header, 2: first col, 3: second col, 4: gray, 0: white
+            cell.style.fill.patternType = 'solid';
+            cell.style.fill.fgColor = colors[type];
+            cell.style.fill.bgColor = 'ffffffff';
+        }
+        function setSpaceRow(sheet) {
+            var r = sheet.addRow()
+            r.isCustom = false;
+        }
+        function SetCellTitle_o(r, d, s, b, a) {
+            var c = r.addCell();
+            c.value = d;
+            setAlignStyle(c, 'center', a);
+            setFontStyle(c, s, b);
+            fill(c, 5);
+            setborder(c, 1, 1, 1, 1);
+        }
+        function SetCellText_o(r, d, s, b, a) {
+            var c = r.addCell();
+            c.value = d;
+            setAlignStyle(c, 'center', a);
+            setFontStyle(c, s, b);
+            setborder(c, 1, 1, 1, 1);
+        }
+    </script>
     <!-- 4. Custom Function -->
     <script type="text/javascript">
+
         function fn_initType() {
             //$.sa.get('http://infiqaapi.elandcloud.com/infi/api/v1/PlanTask/GetStatus',
             $.sa.get(TASKGETSTATUS,
@@ -987,13 +1096,13 @@
             </div>
         </div>
         @*<div class="col-xs-4">
-            <div class="input-group">
-                <label class="radio-inline" style="padding-left:0px;">
-                    <input type="checkbox" name="UseType" id="useYN" />
-                    使用与否
-                </label>
-            </div>
-        </div>*@
+                <div class="input-group">
+                    <label class="radio-inline" style="padding-left:0px;">
+                        <input type="checkbox" name="UseType" id="useYN" />
+                        使用与否
+                    </label>
+                </div>
+            </div>*@
     </div>
 </div>
 <div class="row" style="margin-top:10px;">
@@ -1008,6 +1117,9 @@
 <div class="row" style="padding-top:10px;">
     <div class="col-xs-12">
         <div class="pull-right">
+            <button class="btn btn-primary" id="btnAExport">
+                <span class="fa fa-save gap-icon"></span>导出体系
+            </button>
             <button class="btn btn-primary" id="btnAadd">
                 <span class="fa fa-plus gap-icon"></span>添加体系
             </button>

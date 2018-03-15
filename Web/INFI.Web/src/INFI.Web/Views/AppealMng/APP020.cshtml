@@ -96,6 +96,10 @@
             //location.href = "~/Template/Score.xlsx";
             document.getElementById("a").click();
         });
+
+        $("#btnExportTPId").on("click",function(){            
+            fn_exportTPId();
+        });
     }
 
     function InitData() {
@@ -105,6 +109,123 @@
         fn_initsourceType();
      }
     </script>
+
+    <!--Excel 下载-->
+<script src="../js/excel/FileSaver.js"></script>
+<script src="../js/excel/jszip.min.js"></script>
+<script src="../js/excel/xlsx.js"></script>
+<script type="text/javascript">
+    function fn_exportTPId() {
+           var sdate = $("#txtSDate").val().replace(/\-/gi, '');
+            var edate = $("#txtEDate").val().replace(/\-/gi, '');
+            if (sdate > edate) {
+                $.sa.warning("结束时间不能在开始时间之前");
+                return;
+            }
+            var title = $("#txtTitle").val();
+            var type = "0";//$("#selStatus").val();
+            var sourceType=$("#selsourceType").val();
+            //$.sa.get('http://localhost:6505/infi/api/v1/PlanTask/GetPlansList',
+            $.sa.get(TASKGETPLANSLIST,
+                          { Title: title, VisitType: type, SDate: sdate, EDate: edate, UserId: '@Context.Request.Cookies[SessionKeys.SESSION_USERID]',SourceType:sourceType },
+                          {
+                              "success": function (data) {
+                                  if (data != null && JSON.parse(data.body).length>0) {
+                                      var dataObj = JSON.parse(data.body);
+                                      
+                                      var file = new xlsx.File();
+                                      var sheet = file.addSheet('任务');
+
+                                      var titles = ["任务ID", "经销商代码"];
+                                      SetExcelSHeaderR_o(sheet, titles);
+
+                                      for (i in dataObj) {
+                                          var item = dataObj[i];
+                                          var r = sheet.addRow();
+                                          r.isCustom = false;
+                                          SetCellText_o(r, item.TPId, 9, false, 'center');
+                                          SetCellText_o(r, item.Code, 9, false, 'center');
+                                      }
+                                      var time = new Date().Format("yyyyMMddhhmmss");
+                                      var reportname = "任务_" + time;
+                                      var now = reportname + ".xlsx";
+                                      file.saveAs('blob')
+                                        .then(function (content) {
+                                            saveAs(content, now);
+                                        });
+
+                                  } else {
+                                      $.sa.warning("没有查询到数据！");
+                                  }
+                              },
+                              "failure": function (data, statusText, jqXHR) {
+                                  $.sa.warning(data.msg);
+                              }
+                          }, $("body"));
+
+        }
+
+        function SetExcelSHeaderR_o(sheet, d) {
+            var r = sheet.addRow();
+            r.isCustom = false;
+            for (var i = 0; i < d.length; i++) {
+                SetCellTitle_o(r, d[i], 10, true, 'center');
+            }
+        }
+
+        function setAlignStyle(cell, v, h) {
+            cell.style.align.v = v;
+            cell.style.align.h = h;
+            cell.style.align.wrapText = true;
+            cell.style.align.shrinkToFit = true;
+        }
+        function setFontStyle(cell, size, byn, c) {
+            cell.style.font.name = "微软雅黑";
+            cell.style.font.size = size;
+            cell.style.font.bold = byn;
+            cell.style.font.color = '#555555';
+        }
+        function setborder(cell, top, left, bottom, right) {
+            var light = 'ffffffff';
+            var dark = 'ff7e6a54';
+            cell.style.border.top = 'thin';//'medium'//cell.style.applyBorder = true;
+            cell.style.border.topColor = top ? dark : light;
+            cell.style.border.left = 'thin';
+            cell.style.border.leftColor = left ? dark : light;
+            cell.style.border.bottom = 'thin';
+            cell.style.border.bottomColor = bottom ? dark : light;
+            cell.style.border.right = 'thin';
+            cell.style.border.rightColor = right ? dark : light;
+        }
+        function fill(cell, type) {
+            type = type || 0;
+            var colors = ['ffffffff', 'ffa2917d', 'ffe4e2de', 'fffff8df', 'fff1eeec', '74a3d2'];
+            // 1: header, 2: first col, 3: second col, 4: gray, 0: white
+            cell.style.fill.patternType = 'solid';
+            cell.style.fill.fgColor = colors[type];
+            cell.style.fill.bgColor = 'ffffffff';
+        }
+        function setSpaceRow(sheet) {
+            var r = sheet.addRow()
+            r.isCustom = false;
+        }
+        function SetCellTitle_o(r, d, s, b, a) {
+            var c = r.addCell();
+            c.value = d;
+            setAlignStyle(c, 'center', a);
+            setFontStyle(c, s, b);
+            fill(c, 5);
+            setborder(c, 1, 1, 1, 1);
+        }
+        function SetCellText_o(r, d, s, b, a) {
+            var c = r.addCell();
+            c.value = d;
+            setAlignStyle(c, 'center', a);
+            setFontStyle(c, s, b);
+            setborder(c, 1, 1, 1, 1);
+        }
+</script>
+
     <!-- 3. Validate -->
     <script type="text/javascript">
     </script>
@@ -264,6 +385,16 @@
                         cellattr: function (rowId, val, rawObject, cm, rdata) {
                             return 'class="readonlycell"';
                         }
+                    },{
+                        name: 'TPId', label: '任务ID', width: 80, align: 'left',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
+                    },{
+                        name: 'Code', label: '经销商代码', width: 80, align: 'left',
+                        cellattr: function (rowId, val, rawObject, cm, rdata) {
+                            return 'class="readonlycell"';
+                        }
                     },
                     {
                         name: 'Name', label: '经销商', width: 120, align: 'center',
@@ -415,6 +546,9 @@
                 </button>
                 <button id="btnExcelDown" class="btn btn-primary">
                     <span class="fa fa-file-excel-o gap-icon"></span>Excel模板下载
+                </button>
+                <button id="btnExportTPId" class="btn btn-primary">
+                    <span class="fa fa-file-excel-o gap-icon"></span>导出任务ID
                 </button>
                 <a href="~/Template/计划任务模板.xlsx" class="aline" id="a" style="display:none">Excel模板下载</a>
             </div>
