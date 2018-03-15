@@ -46,7 +46,7 @@ namespace INFI.Web.Controllers
         }
 
         [PermissionRequired]
-        public IActionResult BAS040()
+        public IActionResult BAS070()
         {
             return View();
         }
