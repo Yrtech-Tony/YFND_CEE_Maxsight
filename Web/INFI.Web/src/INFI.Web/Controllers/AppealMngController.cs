@@ -53,7 +53,7 @@ namespace INFI.Web.Controllers
                 mouth = 6;
             }
             ViewBag.CurrentDate = now.ToString("yyyy-MM-dd");
-            ViewBag.FirstDay = new DateTime(now.Year, mouth, 1).ToString("yyyy-MM-dd");
+            ViewBag.FirstDay = new DateTime(now.Year, 3, 1).ToString("yyyy-MM-dd");
             return View();
         }
         public IActionResult APP040P()
