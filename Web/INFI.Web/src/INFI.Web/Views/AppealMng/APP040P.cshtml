@@ -5,17 +5,17 @@
 @section HeadCss{
     <style type="text/css">
         #radAppealResult label {
-                display: inline-block;
-                cursor: pointer;
-                position: relative;
-                padding-left: 25px;
-                margin-right: 15px;
-                font-size: 15px;
-                font-family:Microsoft YaHei;
-                font-weight:normal;
-            }
+            display: inline-block;
+            cursor: pointer;
+            position: relative;
+            padding-left: 25px;
+            margin-right: 15px;
+            font-size: 15px;
+            font-family: Microsoft YaHei;
+            font-weight: normal;
+        }
 
-          #radAppealResult  label:before {
+            #radAppealResult label:before {
                 content: "";
                 display: inline-block;
                 width: 22px;
@@ -29,19 +29,19 @@
                 border-radius: 25px;
             }
 
-           #radAppealResult  input[type=radio],
-            input[type=checkbox] {
-                display: none;
-            }
+        #radAppealResult input[type=radio],
+        input[type=checkbox] {
+            display: none;
+        }
 
-           #radAppealResult  input[type=radio]:checked + label:before {
+            #radAppealResult input[type=radio]:checked + label:before {
                 content: "\2022";
                 color: #ce1515;
                 font-size: 50px;
                 text-align: center;
                 line-height: 15px;
             }
-        </style>
+    </style>
 }
 @section scripts{
     <!-- 1. Load -->
@@ -52,7 +52,7 @@
         _tIId = Request["TIId"];
         _aPId = Request["APId"];
         _result = Request["Result"];
-        _remarks= Request["Remarks"]; 
+        _remarks = Request["Remarks"];
         var _userType = "@Context.Request.Cookies[SessionKeys.SESSION_USERTYPE]";
         $(document).ready(function () {
             fn_Initialize();
@@ -99,7 +99,7 @@
                 //$("#txtAppealContent").attr("disabled", true);
                 //$("#btnSave").addClass("hidden");
                 //$("#container").addClass("hidden");
-                //Modify by dong.limin 2017-11-20 9:06:09  
+                //Modify by dong.limin 2017-11-20 9:06:09
                 //英菲尼迪报告平台的申诉期结束，请协助周一早上尽早关闭经销商在申诉模块填写的权限，经销商仅可以查阅申诉批复结果，需要保留admin账户的审批权限可以继续使用。
 
                 $("#divApprovalRemark").addClass("hidden");
@@ -109,32 +109,42 @@
                 $("#divGrid2").addClass("hidden");
                 $("#txtSRemarks").val(_remarks);
             } else {
+                fn_Search();
                 $("#txtAppealContent").attr("disabled", true);
                 $("#btnSave").addClass("hidden");
                 $("#container").addClass("hidden");
+
                 $("#divApprovalRemark").removeClass("hidden");
+                $("#divAppealResult").removeClass("hidden");
+                $('#btnApproal').removeClass("hidden");
+                $("#container2").removeClass("hidden");
                 $("#divGrid2").removeClass("hidden");
-                fn_Search();
-                if (_result == "0") {
-                    $("#txtApprovalRemark").attr("disabled", false);
-                    //$("#chkAppealResult").attr("disabled", false);
-                    $("#radAppealResult input[type=radio]").attr("disabled", false);
-                    $('#btnApproal').removeClass("hidden");
-                    $("#divAppealResult").removeClass("hidden");
-                    $("#container2").removeClass("hidden");
+                debugger
+                if (_result == "0" || _result == "待审核") {
+                    if (_userType == "S")
+                    {
+                        $("#txtAppealContent").attr("disabled", false);
+                        $("#btnSave").removeClass("hidden");
+                        $("#container").removeClass("hidden");
+                        $("#divApprovalRemark").addClass("hidden");
+                        $("#divAppealResult").addClass("hidden");
+                        $('#btnApproal').addClass("hidden");
+                        $("#container2").addClass("hidden");
+                        $("#divGrid2").addClass("hidden");
+                    }
                 } else {
                     //$("#chkAppealResult").attr("disabled", true);
                     if (_userType == "A") {
                         $("#radAppealResult input[type=radio]").attr("disabled", false);
                         $('#btnApproal').removeClass("hidden");
                         $("#txtApprovalRemark").attr("disabled", false);
+
                     }
-                    else
-                    {
+                    else {
                         $("#radAppealResult input[type=radio]").attr("disabled", true);
                         $('#btnApproal').addClass("hidden");
                         $("#txtApprovalRemark").attr("disabled", true);
-                     }
+                    }
                     $("#divAppealResult").removeClass("hidden");
                     $("#container2").addClass("hidden");
                 }
@@ -154,6 +164,7 @@
                                      var data = JSON.parse(data.body);
                                      $("#txtSRemarks").val(data.SRemarks);
                                      $("#txtAppealContent").val(data.AppealContent);
+                                     debugger
                                      //var passYN = "";
                                      if (data.AppealResult == "P") {
                                          //passYN = true;
@@ -213,12 +224,12 @@
             //    $.sa.warning("请填写审核结果！");
             //    return;
             //}
-            if ($("#radAppealResult input[type=radio]").filter(":checked").val()==undefined) {
+            if ($("#radAppealResult input[type=radio]").filter(":checked").val() == undefined) {
                 $.sa.warning("请选择是否通过！");
                 return;
-            }else  if ($("#radAppealResult input[type=radio]").filter(":checked").val() == "0" && $("#txtApprovalRemark").val() == "") {
+            } else if ($("#radAppealResult input[type=radio]").filter(":checked").val() == "0" && $("#txtApprovalRemark").val() == "") {
                 $.sa.warning("请填写审核结果！");
-                    return;
+                return;
             }
             $.sa.confirm('确定保存吗？', {
                 fnOk: function () {
@@ -352,7 +363,7 @@
                          cellattr: function (rowId, val, rawObject, cm, rdata) {
                              return 'class="readonlycell"';
                          },
-                         formatter: fn_DeleteFile, unformat: fn_UnDeleteFile, hidden: _aPId == 0 ? false : true
+                         formatter: fn_DeleteFile, unformat: fn_UnDeleteFile, hidden: (_aPId == 0||(_userType=="S")&&( _result=="0"||_result=="待审核")) ? false : true
                      },
                      {
                          name: 'Url', hidden: true
@@ -603,13 +614,13 @@
         <div class="input-group">
             <label class="input-group-addon title-xs">是否通过</label>
             @*<div class="form-control">
-                <label class="checkbox-inline" style="cursor:default;">
-                    <input type="checkbox" id="chkAppealResult" />&nbsp;
-                </label>
-            </div>*@
+                    <label class="checkbox-inline" style="cursor:default;">
+                        <input type="checkbox" id="chkAppealResult" />&nbsp;
+                    </label>
+                </div>*@
             <div class="form-control" id="radAppealResult">
-                <input type="radio" name="radResult" value="1" id="passy"/><label for="passy"  class="radio-inline" style="cursor:default;"> 通过</label>
-                <input type="radio" name="radResult" value="0" id="passn"/><label for="passn"  class="radio-inline" style="cursor:default;">不通过</label>
+                <input type="radio" name="radResult" value="1" id="passy" /><label for="passy" class="radio-inline" style="cursor:default;"> 通过</label>
+                <input type="radio" name="radResult" value="0" id="passn" /><label for="passn" class="radio-inline" style="cursor:default;">不通过</label>
             </div>
         </div>
     </div>
