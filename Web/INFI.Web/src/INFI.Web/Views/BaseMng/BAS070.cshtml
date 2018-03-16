@@ -276,21 +276,22 @@
             var ids = _grid.getDataIDs();
             var pref = $.jgrid.uidPref;
             var newid = 1;
-            if ($("#selBusLst").val() == "0") {
-                $.sa.warning("请先选择业务分区", {
-                    fnClose: function () {
-                        $("#selBusLst").focus();
-                    }
-                });
-                return;
-            }else if ($("#selRepLst").val() == "0") {
-                $.sa.warning("请先选择大区", {
-                    fnClose: function () {
-                        $("#selRepLst").focus();
-                    }
-                });
-                return;
-            }else if ($("#selZionLst").val() == "0") {
+            //if ($("#selBusLst").val() == "0") {
+            //    $.sa.warning("请先选择业务分区", {
+            //        fnClose: function () {
+            //            $("#selBusLst").focus();
+            //        }
+            //    });
+            //    return;
+            //}else if ($("#selRepLst").val() == "0") {
+            //    $.sa.warning("请先选择大区", {
+            //        fnClose: function () {
+            //            $("#selRepLst").focus();
+            //        }
+            //    });
+            //    return;
+            //}else 
+                if ($("#selZionLst").val() == "0") {
                 $.sa.warning("请先选择区域", {
                     fnClose: function () {
                         $("#selZionLst").focus();
@@ -452,8 +453,8 @@
     <div class="col-md-12">
         <div class="input-group">
             <span class="input-group-addon title-sm">组织结构</span>
-            <select class="form-control" style="width:33%" id="selBusLst"></select><!--营销区，客户服务区-->
-            <select class="form-control" style="width:33%" id="selRepLst"></select><!--大区-->
+            @*<select class="form-control" style="width:33%" id="selBusLst"></select><!--营销区，客户服务区-->
+            <select class="form-control" style="width:33%" id="selRepLst"></select><!--大区-->*@
             <select class="form-control" style="width:33%" id="selZionLst"></select><!--区域-->
         </div>
     </div>
