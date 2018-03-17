@@ -71,45 +71,12 @@
                 , { UserId: '@Context.Request.Cookies[SessionKeys.SESSION_USERID]' },
               {
                   "success": function (data) {
-                      busList=data.body;
-                      $("#selBusLst").html(JsonToCboList("BName", "BId", JSON.parse(busList), { 'SelectType': 'All' }));
-                      $("#selRepLst").html(JsonToCboList("EName", "EId", null, { 'SelectType': 'All' }));
-                      $("#selZionLst").html(JsonToCboList("QName", "QId", null, { 'SelectType': 'All' }));
-                      fn_SetRepData();
-                      fn_SetZoneData();
+                      zionServerLst = data.body;
+                      $("#selZionLst").html(JsonToCboList("QName", "QId", JSON.parse(zionServerLst), { 'SelectType': 'All' }));
                   },
                   "failure": function (data, statusText, jqXHR) {
                   }
               });
-        }
-        //大区
-        function fn_SetRepData() {
-            var currentBus = $("#selBusLst").val();
-            $("#selRepLst").html(JsonToCboList("EName", "EId", null, { 'SelectType': 'All' }));
-            $.each(JSON.parse(busList), function (i, v) {
-                if (v.BId == currentBus) {
-                    $("#selRepLst").html(JsonToCboList("EName", "EId", v.RepList, { 'SelectType': 'All' }));
-                }
-            });
-            fn_SetZoneData();
-        }
-        //区域
-        function fn_SetZoneData() {
-            var currentBus = $("#selBusLst").val();
-            var currentRep = $("#selRepLst").val();
-            var data =JSON.parse(busList);
-            for (var i = 0; i < data.length; i++) {
-                if (data[i].BId ==currentBus ) {
-                    repList =  data[i].RepList;
-                    break;
-                }
-            }
-            $("#selZionLst").html(JsonToCboList("QName", "QId", null, { 'SelectType': 'All' }));
-            $.each(repList, function (i, v) {
-                if (v.EId == currentRep) {
-                    $("#selZionLst").html(JsonToCboList("QName", "QId", v.ZionList, { 'SelectType': 'All' }));
-                }
-            });
         }
     </script>
     <!--Save-->
@@ -276,22 +243,7 @@
             var ids = _grid.getDataIDs();
             var pref = $.jgrid.uidPref;
             var newid = 1;
-            //if ($("#selBusLst").val() == "0") {
-            //    $.sa.warning("请先选择业务分区", {
-            //        fnClose: function () {
-            //            $("#selBusLst").focus();
-            //        }
-            //    });
-            //    return;
-            //}else if ($("#selRepLst").val() == "0") {
-            //    $.sa.warning("请先选择大区", {
-            //        fnClose: function () {
-            //            $("#selRepLst").focus();
-            //        }
-            //    });
-            //    return;
-            //}else 
-                if ($("#selZionLst").val() == "0") {
+            if ($("#selZionLst").val() == "0") {
                 $.sa.warning("请先选择区域", {
                     fnClose: function () {
                         $("#selZionLst").focus();
@@ -309,7 +261,7 @@
             newid = pref + (newid).toString();
             var rowdata = {
                 Id: '',
-                ParentId: $("#selBusLst").val(),
+                ParentId: $("#selZionLst").val(),
                 Code: "",
                 Type:'Z',
                 Name: '',
@@ -344,19 +296,20 @@
     <script type="text/javascript">
         function fn_SearchData() {
             var disId = "";
+            var useYn = "";
+
+            useYn = $("[name=UseYN]").filter(":Checked").val()
+
             if ($("#selZionLst").val() != '0') {
                 disId = $("#selZionLst").val();
-            }else if ($("#selRepLst").val() !="0") {
-                disId = $("#selRepLst").val();
-            }else if ($("#selBusLst").val() !="0") {
-                disId = $("#selBusLst").val();
             }
+            debugger
             $.sa.get(
                 GETDISTRIBUTORINFO2
                 , {
                     DisId: disId,
                     Type:"Z",
-                    UseYN: $("[name=UseYN]").filter(":Checked").val()
+                    UseYN: useYn
                 },
             {
                 "success": function (data) {
@@ -450,18 +403,15 @@
     </div>
 </form>
 <div class="row gap-top">
-    <div class="col-md-12">
+    <div class="col-md-4">
         <div class="input-group">
             <span class="input-group-addon title-sm">组织结构</span>
             @*<select class="form-control" style="width:33%" id="selBusLst"></select><!--营销区，客户服务区-->
-            <select class="form-control" style="width:33%" id="selRepLst"></select><!--大区-->*@
-            <select class="form-control" style="width:33%" id="selZionLst"></select><!--区域-->
+                <select class="form-control" style="width:33%" id="selRepLst"></select><!--大区-->*@
+            <select class="form-control" style="width:100%" id="selZionLst"></select><!--区域-->
         </div>
     </div>
-
-</div>
-<div class="row gap-top">
-    <div class="col-md-6">
+    <div class="col-md-8">
         <div class="input-group">
             <span class="input-group-addon title-sm">使用与否</span>
             <div class="form-control" id="rdo">
@@ -480,6 +430,9 @@
             </div>
         </div>
     </div>
+</div>
+<div class="row gap-top">
+
 </div>
 
 <div class="row gap-top">
