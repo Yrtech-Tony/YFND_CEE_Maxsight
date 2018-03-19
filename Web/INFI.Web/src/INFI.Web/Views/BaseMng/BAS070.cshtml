@@ -122,9 +122,10 @@
                 this.ParentId = $("#selZionLst").val();
                 delete this.id;
                 delete this.rn;
+                delete this.InDateTime;
             });
             var param = { XmlData: editData, UserId: '@Context.Request.Cookies[SessionKeys.SESSION_USERID]' };
-            $.sa.post(
+            $.sa.post( //"http://localhost:6506/infi/api/v1/Users/SaveDistributorInfo2",
              SAVEDISTRIBUTORINFO2,
                 JSON.stringify(param),
                      {
