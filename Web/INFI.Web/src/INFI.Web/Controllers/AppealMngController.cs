@@ -35,7 +35,7 @@ namespace INFI.Web.Controllers
         public IActionResult APP040()
         {
             DateTime now = DateTime.Now;
-            DateTime d1 = new DateTime(2018, 2, 25);
+            DateTime d1 = new DateTime(2018, 5, 1);
             ViewBag.CurrentDate = now.ToString("yyyy-MM-dd");
             ViewBag.FirstDayOfMonth = d1.ToString("yyyy-MM-dd");
             return View();
