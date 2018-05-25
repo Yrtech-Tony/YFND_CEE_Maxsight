@@ -56,7 +56,7 @@ namespace INFI.Web.Controllers
             {
                 int RId = recItemDao.RId;
                 string firstDic = recItemDao.DisCode.Trim() +"_"+ recItemDao.DisName.Trim();
-                string secondDic = recItemDao.RecordType.Trim();                
+                string secondDic =  recItemDao.RecordType.Trim()+"_"+recItemDao.RecordTitle.Replace("\t","").Replace("\r","").Replace("\n","").Replace("\r\n","").Replace("*","").Replace("\"","").Replace(":","").Replace("?","").Replace("|","").Replace("<","").Replace(">","").Replace("\\","").Replace(@"\/","");                
                 string localPath = Path.Combine(rootPath, firstDic, secondDic);
 
                 RecordInfoDto recInfoDto = GetRecordInSearch(RId).Result;
