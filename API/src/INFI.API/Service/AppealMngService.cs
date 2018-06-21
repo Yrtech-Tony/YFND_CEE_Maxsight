@@ -31,6 +31,7 @@ namespace INFI.API.Service
             string AttachmentList = CommonHelper.Serializer(typeof(List<AttachmentMngDto>), param.AttachmentList);
             string spName = @"up_MBMS_APP_AppealInfoReg_C";
             DynamicParameters dp = new DynamicParameters();
+            dp.Add("@APId", param.Id, DbType.Int32);
             dp.Add("@TPId", param.TPId, DbType.Int32);
             dp.Add("@TIId", param.TIId, DbType.Int32);
             dp.Add("@AppealContent", param.AppealContent, DbType.String);

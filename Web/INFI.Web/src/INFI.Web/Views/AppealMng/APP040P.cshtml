@@ -201,7 +201,7 @@
                         attachList.push(attachItem);
                     }
                     //$.sa.post(CUSTOMIZEDTASKCHECK,
-                    var saveData = { TPId: _tPId, TIId: _tIId, AppealContent: $("#txtAppealContent").val(), ApprealUserId: "@Context.Request.Cookies[SessionKeys.SESSION_USERID]", AttachmentList: attachList };
+                    var saveData = { TPId: _tPId, TIId: _tIId,Id:_aPId, AppealContent: $("#txtAppealContent").val(), ApprealUserId: "@Context.Request.Cookies[SessionKeys.SESSION_USERID]", AttachmentList: attachList };
                     $.sa.post(APPEALINFOREG,
                     //$.sa.post("http://localhost:6505/mbms/api/v1/AppealMng/AppealInfoReg",
                          JSON.stringify(saveData),
