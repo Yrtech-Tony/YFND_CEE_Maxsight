@@ -12,6 +12,7 @@ using INFI.API.Common;
 using INFI.API.Context;
 using INFI.API.Models.AttachmentMngDto;
 using INFI.API.Models.AppealMngDto;
+using INFI.API.Models.NotifiMngDto;
 
 namespace INFI.API.Service
 {
@@ -21,7 +22,7 @@ namespace INFI.API.Service
         Task<APIResult> AppealInfoSearch(int aPId);
         Task<APIResult> SearchApplealInfoList(string sdate, string edate, string sourceType, string carId, string areaId, string zoneId, string disId, string appealResult);
         Task<APIResult> UpdateApplealInfo(string userId, string id, string appealResult, string approvalRemark, List<AttachmentMngDto> approalAttachList);
-
+        Task<APIResult> SearchChapterType();
 
     }
     public class AppealMngService : IAppealMngService
@@ -170,7 +171,27 @@ namespace INFI.API.Service
                 return new APIResult { Body = "", ResultCode = ResultType.Success, Msg = "" };
             }
         }
+        /// <summary>
+        /// add by moujunsheng
+        /// </summary>
+        /// <returns></returns>
+        public async Task<APIResult> SearchChapterType()
+        {
+            string spName = @"up_MBMS_APP_ChapterType_R";
 
-
+            using (var conn = new SqlConnection(DapperContext.Current.SqlConnection))
+            {
+                try
+                {
+                    IEnumerable<ChapterTypeDto> ChapterTypeList = await conn.QueryAsync<ChapterTypeDto>(spName, null, null, null, CommandType.StoredProcedure);
+                    APIResult result = new APIResult { Body = CommonHelper.EncodeDto<ChapterTypeDto>(ChapterTypeList), ResultCode = ResultType.Success, Msg = "" };
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    return new APIResult { Body = "", ResultCode = ResultType.Success, Msg = ex.Message };
+                }
+            }
+        }
     }
 }
