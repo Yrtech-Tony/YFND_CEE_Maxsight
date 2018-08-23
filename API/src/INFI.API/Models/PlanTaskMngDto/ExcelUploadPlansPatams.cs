@@ -52,7 +52,6 @@ namespace INFI.API.Models.PlanTaskMngDto
         public string TCId { get; set; }
         public string TIId { get; set; }
         public string ChapterType { get; set; }
-
     }
     public class ExcelCheckStandard
     {
