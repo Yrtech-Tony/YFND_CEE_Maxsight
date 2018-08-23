@@ -9,6 +9,7 @@ using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.AspNetCore.Hosting;
 using System.IO.Compression;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 // For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -41,7 +42,6 @@ namespace INFI.Web.Controllers
         {
             return View();
         }
-
         
         public IActionResult DownloadAttachBatch(int userId, string recordType, string recordSDate, string recordEDate, int DisId, string approvalStatus)
         {
@@ -56,10 +56,12 @@ namespace INFI.Web.Controllers
             {
                 int RId = recItemDao.RId;
                 string firstDic = recItemDao.DisCode.Trim() +"_"+ recItemDao.DisName.Trim();
-                string secondDic =  recItemDao.RecordType.Trim()+"_"+recItemDao.RecordTitle.Replace("\t","").Replace("\r","").Replace("\n","").Replace("\r\n","").Replace("*","").Replace("\"","").Replace(":","").Replace("?","").Replace("|","").Replace("<","").Replace(">","").Replace("\\","").Replace(@"\/","");                
-                string localPath = Path.Combine(rootPath, firstDic, secondDic);
+                string secondDic = recItemDao.RecordType.Trim() + "_" + recItemDao.RecordTitle;
+                var regexSearch = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
+                var reg = new Regex(string.Format("[{0}]", Regex.Escape(regexSearch)));
+                secondDic = reg.Replace(secondDic, ""); string localPath = Path.Combine(rootPath, firstDic, secondDic);
 
-                RecordInfoDto recInfoDto = GetRecordInSearch(RId).Result;
+                AppealInfo recInfoDto = GetRecordInSearch(RId).Result;
                 if (recInfoDto == null || recInfoDto.AttachmentList == null || recInfoDto.AttachmentList.Count == 0)
                 {
                     continue;
@@ -109,16 +111,16 @@ namespace INFI.Web.Controllers
             return recItemDto;
         }
 
-        private async Task<RecordInfoDto> GetRecordInSearch(int rId)
+        private async Task<AppealInfo> GetRecordInSearch(int rId)
         {
             string result = await CommonHelper.GetHttpClient().GetStringAsync(CommonHelper.Current.GetAPIBaseUrl + "/Record/RecordInfoSearch?rId=" + rId);
 
             var apiResult = CommonHelper.DecodeString<APIResult>(result);
-            RecordInfoDto recInfoDto = null;
+            AppealInfo recInfoDto = null;
 
             if (apiResult.ResultCode == ResultType.Success)
             {
-                recInfoDto = CommonHelper.DecodeString<RecordInfoDto>(apiResult.Body);
+                recInfoDto = CommonHelper.DecodeString<AppealInfo>(apiResult.Body);
             }
 
             return recInfoDto;

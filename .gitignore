@@ -3,3 +3,9 @@
 ################################################################################
 
 /Web/INFI.Web/.vs
+/API/.vs/INFI.API/v14
+/API/src/INFI.API/INFI.API.xproj.user
+/Web/INFI.Web/src/INFI.Web/bin/Debug/netcoreapp1.0
+/Web/INFI.Web/src/INFI.Web/obj/Debug/netcoreapp1.0
+/Web/INFI.Web/src/INFI.Web/wwwroot/downloads
+/Web/INFI.Web/src/INFI.Web/INFI.Web.xproj.user

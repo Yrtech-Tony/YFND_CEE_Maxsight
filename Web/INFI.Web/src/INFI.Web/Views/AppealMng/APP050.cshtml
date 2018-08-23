@@ -67,6 +67,11 @@
             $("#btnExcelDownload").on("click", function () {
                 fn_downLoad();
             });
+
+            //add by 霍海涛   批量下载报备附件
+            $("#btnDownLoadAttach").on("click", function () {
+                fn_downloadAttach();
+            });
         }
     </script>
     <!-- 3. InitData -->
@@ -189,18 +194,20 @@
                 var zoneId = $("#sel_Area_id").val();
                 var disId = $("#sel_Distributor_id").val();
                 var appealResult = $("#sel_status_id").val();
+                var chapterType = $("#sel_ChapterType").val();
 
                 //$.sa.get("http://localhost:6505/mbms/api/v1/AppealMng/SearchApplealInfoList",
                 $.sa.get(SEARCHAPPLEALINFOLIST,
                  {
-                     sdate: sdate
-                     , edate: edate
-                     , sourceType: sourceType
-                     , carId: 0
-                     , areaId: areaId
-                     , zoneId: zoneId
-                     , disId: disId
-                     , appealResult: appealResult
+                     sdate: sdate,
+                     edate: edate,
+                     sourceType: sourceType,
+                     carId: 0,
+                     areaId: areaId,
+                     zoneId: zoneId,
+                     disId: disId,
+                     appealResult: appealResult,
+                     chapterType: chapterType
                  },
                  {
                      "success": function (data) {
@@ -241,7 +248,7 @@
                             }
                         },
                         {
-                            name: 'Title', label: "体系名称", width: 150, align: 'left',
+                            name: 'Title', label: "体系名称", width: 140, align: 'left',
                             cellattr: function (rowId, val, rawObject, cm, rdata) {
                                 return 'class="readonlycell"';
                             }
@@ -253,7 +260,7 @@
                             }
                         },
                         {
-                            name: 'CTypeName', label: "车系", width: 50, align: 'center',hidden:true,
+                            name: 'CTypeName', label: "车系", width: 50, align: 'center', hidden: true,
                             cellattr: function (rowId, val, rawObject, cm, rdata) {
                                 return 'class="readonlycell"';
                             }
@@ -291,6 +298,11 @@
                         },
                         {
                             name: 'SourceTypeName', label: '来源类型', width: 40, align: 'center', editable: false,
+                            cellattr: function (rowId, val, rawObject, cm, rdata) {
+                                return 'class="readonlycell"';
+                            }
+                        }, {
+                            name: 'ChapterType', label: '章节种类', width: 40, align: 'center', editable: false,
                             cellattr: function (rowId, val, rawObject, cm, rdata) {
                                 return 'class="readonlycell"';
                             }
@@ -460,7 +472,7 @@
             sheet.addRow();
 
             var title = sheet.addRow();
-            var hTitle = ['体系编号','体系名称', '','失分备注','', '经销商名称', '', '申诉时间', '申诉人','申诉内容', '审核状态','审核备注','批复时间', '来源类型'];
+            var hTitle = ['体系编号', '体系名称', '', '失分备注', '', '经销商名称', '', '申诉时间', '申诉人', '申诉内容', '审核状态', '审核备注', '批复时间', '来源类型'];
             for (var y = 0; y < hTitle.length; y++) {
                 var hc = title.addCell();
                 hc.style.align.v = 'center';
@@ -469,7 +481,7 @@
                 border(hc, 1, 1, 1, 1);
                 font(hc);
                 hc.value = hTitle[y];
-                if (y == 1 || y == 3||y==5) {
+                if (y == 1 || y == 3 || y == 5) {
                     hc.hMerge = 1;
                 }
                 fill(hc, 4)
@@ -607,8 +619,6 @@
                 }
             }
 
-
-
             file
               .saveAs('blob')
               .then(function (content) {
@@ -649,7 +659,44 @@
             cell.style.font.underline = underline;
         }
 
+        // add by 霍海涛   批量下载报备附件
+        function fn_downloadAttach() {
+            var sdate = $("#txtSDate").val().replace(/\-/gi, '');
+            var edate = $("#txtEDate").val().replace(/\-/gi, '');
+            var sourceType = $("#selSourceType").val();
+            //var carId = $("#selCarType").val();
+            var areaId = $("#sel_Region_id").val();
+            var zoneId = $("#sel_Area_id").val();
+            var disId = $("#sel_Distributor_id").val();
+            var appealResult = $("#sel_status_id").val();
+            var chapterType = $("#sel_ChapterType").val();
 
+            var item = {
+                sdate: sdate,
+                edate: edate,
+                sourceType: sourceType,
+                carId: 0,
+                areaId: areaId,
+                zoneId: zoneId,
+                disId: disId,
+                appealResult: appealResult,
+                chapterType: chapterType
+            };
+
+            var url = '/AppealMng/DownloadAttachBatch';
+            $.sa.get(url, item, {
+                "success": function (data) {
+                    if (data.status) {
+                        window.location.href = data.zipFile;
+                    } else {
+                        $.sa.warning("下载失败." + data.errorMsg);
+                    }
+                },
+                "failure": function (data) {
+                    $.sa.warning("下载失败,请重试.");
+                }
+            }, $("body"));
+        }
     </script>
 }
 <div class="row gap-top">
@@ -662,6 +709,9 @@
             </button>
             <button class="btn btn-primary" id="btnExcelDownload">
                 <span class="fa fa-file-excel-o gap-icon"></span>下载
+            </button>
+            <button class="btn btn-primary" id="btnDownLoadAttach">
+                <span class="fa fa-file-excel-o gap-icon"></span>批量下载报备附件
             </button>
         </div>
     </div>
@@ -718,6 +768,14 @@
         <div class="input-group" id="distributor_id">
             <span class="input-group-addon title-sm">经销商</span>
             <select class="form-control readonly" id="sel_Distributor_id"></select>
+        </div>
+    </div>
+</div>
+<div class="row gap-top">
+    <div class="col-md-4">
+        <div class="input-group">
+            <span class="input-group-addon title-sm">章节种类</span>
+            <select class="form-control readonly" id="sel_ChapterType"></select>
         </div>
     </div>
 </div>

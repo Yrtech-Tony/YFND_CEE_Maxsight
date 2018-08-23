@@ -591,11 +591,10 @@
                 url += pro + "=" + item[pro] + "&"
             }
             $.ajax({
-                type: "POST",
+                type: "GET",
                 url: url,
                 contentType: false,
                 processData: false,
-                data: item,
                 beforeSend: function () {
                     $("#modal-container-loadbar").css("display", "block");
                     spinner.spin(document.getElementById('loadBar'));
