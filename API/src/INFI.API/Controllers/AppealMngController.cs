@@ -29,9 +29,9 @@ namespace INFI.API.Controllers
         // GET: api/values 审核列表
         [HttpGet]
         [ActionName("SearchApplealInfoList")]
-        public Task<APIResult> SearchApplealInfoList(string sdate, string edate, string sourceType, string carId, string areaId, string zoneId, string disId, string appealResult)
+        public Task<APIResult> SearchApplealInfoList(string sdate, string edate, string sourceType, string carId, string areaId, string zoneId, string disId, string appealResult,string chapterType)
         {
-            return _appealMngService.SearchApplealInfoList(sdate,edate,sourceType,carId,areaId,zoneId,disId,appealResult);
+            return _appealMngService.SearchApplealInfoList(sdate,edate,sourceType,carId,areaId,zoneId,disId,appealResult, chapterType);
         }
 
         // GET api/values/5
@@ -61,6 +61,12 @@ namespace INFI.API.Controllers
         public Task<APIResult> AppealInfoSearch(int aPId)
         {
             return _appealMngService.AppealInfoSearch(aPId);
+        }
+        [HttpGet]
+        [ActionName("SearchChapterType")]
+        public Task<APIResult> SearchChapterType()
+        {
+            return _appealMngService.SearchChapterType();
         }
     }
 }

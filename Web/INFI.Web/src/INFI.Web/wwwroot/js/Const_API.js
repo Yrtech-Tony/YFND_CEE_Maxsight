@@ -155,4 +155,5 @@ var SEARCHAPPLEALINFOLIST = BASE_URL + "AppealMng/SearchApplealInfoList";
 var APPEALINFOREG = BASE_URL + "AppealMng/AppealInfoReg";
 var APPEALINFOSEARCH = BASE_URL + "AppealMng/AppealInfoSearch";
 var UPDATEAPPLEALINFO = BASE_URL + "AppealMng/UpdateApplealInfo";
+var SEARCHCHAPTERTYPE = BASE_URL + "AppealMng/SearchChapterType";
 //END

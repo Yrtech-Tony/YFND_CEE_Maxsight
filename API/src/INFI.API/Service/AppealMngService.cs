@@ -20,7 +20,7 @@ namespace INFI.API.Service
     {
         Task<APIResult> AppealInfoReg(AppealInfo param);
         Task<APIResult> AppealInfoSearch(int aPId);
-        Task<APIResult> SearchApplealInfoList(string sdate, string edate, string sourceType, string carId, string areaId, string zoneId, string disId, string appealResult);
+        Task<APIResult> SearchApplealInfoList(string sdate, string edate, string sourceType, string carId, string areaId, string zoneId, string disId, string appealResult, string chapterType);
         Task<APIResult> UpdateApplealInfo(string userId, string id, string appealResult, string approvalRemark, List<AttachmentMngDto> approalAttachList);
         Task<APIResult> SearchChapterType();
 
@@ -105,7 +105,7 @@ namespace INFI.API.Service
                 return new APIResult { Body = "", ResultCode = ResultType.Failure, Msg = ex.Message };
             }
         }
-        public async Task<APIResult> SearchApplealInfoList(string sdate, string edate, string sourceType, string carId, string areaId, string zoneId, string disId, string appealResult)
+        public async Task<APIResult> SearchApplealInfoList(string sdate, string edate, string sourceType, string carId, string areaId, string zoneId, string disId, string appealResult, string chapterType)
         {
             string spName = @"up_MBMS_APP_AppealInfo_R";
             DynamicParameters dp = new DynamicParameters();
@@ -116,6 +116,8 @@ namespace INFI.API.Service
             dp.Add("@ZoneId", zoneId, DbType.Int32);
             dp.Add("@DisId", disId, DbType.Int32);
             dp.Add("@AppealResult", appealResult, DbType.String);
+            dp.Add("@ChapterType", chapterType, DbType.String);
+
             using (var conn = new SqlConnection(DapperContext.Current.SqlConnection))
             {
                 conn.Open();

@@ -67,6 +67,10 @@
             $("#btnExcelDownload").on("click", function () {
                 fn_downLoad();
             });
+            $('#sel_ChapterType').on('change', function () {
+                $('#sel_ChapterType').html(JsonToCboList("ChapterTypeName", "ChapterTypeCode", "", { "SelectType": "ALL" }));
+                fn_GetChapterType();
+            });
 
             //add by 霍海涛   批量下载报备附件
             $("#btnDownLoadAttach").on("click", function () {
@@ -133,6 +137,7 @@
                 , $(".Grid")
                 , { type: "spin" });
 
+            fn_GetChapterType();
         }
 
         function fn_GetArea() {
@@ -159,6 +164,24 @@
                              "success": function (data) {
                                  if (data != null) {
                                      $('#sel_Distributor_id').html(JsonToCboList("DisName", "DisId", JSON.parse(data.body), { "SelectType": "ALL" }));
+                                 }
+                             },
+                             "failure": function (data, statusText, jqXHR) {
+                                 $.sa.warning(data.msg);
+                             }
+                         });
+
+        }
+
+        //获取章节种类
+        function fn_GetChapterType() {
+            //$.sa.get('http://localhost:6506/infi/api/v1/AppealMng/SearchChapterType',
+            $.sa.get(SEARCHCHAPTERTYPE,
+                         { },
+                         {
+                             "success": function (data) {
+                                 if (data != null) {
+                                     $('#sel_ChapterType').html(JsonToCboList("ChapterTypeName", "ChapterTypeCode", JSON.parse(data.body), { "SelectType": "ALL" }));
                                  }
                              },
                              "failure": function (data, statusText, jqXHR) {
@@ -196,8 +219,8 @@
                 var appealResult = $("#sel_status_id").val();
                 var chapterType = $("#sel_ChapterType").val();
 
-                //$.sa.get("http://localhost:6505/mbms/api/v1/AppealMng/SearchApplealInfoList",
-                $.sa.get(SEARCHAPPLEALINFOLIST,
+                $.sa.get("http://localhost:6505/mbms/api/v1/AppealMng/SearchApplealInfoList",
+                //$.sa.get(SEARCHAPPLEALINFOLIST,
                  {
                      sdate: sdate,
                      edate: edate,

@@ -12,3 +12,10 @@
 /API/.vs/config
 /API/src/INFI.API/bin/Debug/netcoreapp1.0
 /API/src/INFI.API/obj/Debug/netcoreapp1.0
+/Web/INFI.Web/src/INFI.Web/obj/Release/netcoreapp1.0
+/Web/INFI.Web/src/INFI.Web/bin/Release
+/Web/INFI.Web/src/INFI.Web/Properties/PublishProfiles
+/Web/INFI.Web/src/INFI.Web/wwwroot/uploads
+/NetMid/src/packages
+/NetMid/src/main
+/NetMid/src/.vs
