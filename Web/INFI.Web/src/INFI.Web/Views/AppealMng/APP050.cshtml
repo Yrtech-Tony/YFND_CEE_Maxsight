@@ -707,8 +707,17 @@
                 appealResult: appealResult,
                 chapterType: chapterType
             };
-
+            //var spinner = createSpinner();
+            //$("#modal-container-loadbar").css("display", "block");
+            //spinner.spin(document.getElementById('loadBar'));
             var url = '/AppealMng/DownloadAttachBatch';
+            //$.get(url, item, function (data) {
+            //    if (data.status) {
+            //        window.location.href = data.zipFile;
+            //    } else {
+            //        $.sa.warning("下载失败." + data.errorMsg);
+            //    }
+            //}, "json").fail(function (data) { $.sa.warning("下载失败,请重试."); });
             $.sa.get(url, item, {
                 "success": function (data) {
                     if (data.status) {

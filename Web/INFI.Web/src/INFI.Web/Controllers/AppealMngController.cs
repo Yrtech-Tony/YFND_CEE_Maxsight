@@ -118,14 +118,14 @@ namespace INFI.Web.Controllers
             }
             if (!hasAttach)
             {
-                return Json(new { ErrorMsg = "没有报备附件.", Status = false });
+                return Json(new { ErrorMsg = "没有报备附件.", Status = false, resultCode = 0 });
             }
             //ZIP 
             string zipFile = Path.Combine(downloads, timestamp + ".zip");
             ZipFile.CreateFromDirectory(rootPath, zipFile);
             //Directory.Delete(rootPath, true);//打包后删除原文件夹
 
-            return Json(new { ZipFile = zipFile.Replace(_environment.WebRootPath, ""), Status = true });
+            return Json(new { ZipFile = zipFile.Replace(_environment.WebRootPath, ""), Status = true, resultCode = 0 });
         }
 
 
