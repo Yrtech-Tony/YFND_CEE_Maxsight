@@ -14,6 +14,7 @@ namespace INFI.API.Models.AppealMngDto
         public string TPTitle { get; set; }
         public string DistributorId { get; set; }
         public string DisName { get; set; }
+        public string DisCode { get; set; }
         public string ApprealDateTime { get; set; }
         public string AppealContent { get; set; }
         public string AppealResult { get; set; }

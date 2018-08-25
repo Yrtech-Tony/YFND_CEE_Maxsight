@@ -177,7 +177,7 @@
                          {
                              "success": function (data) {
                                  if (data != null) {
-                                     $('#sel_ChapterType').html(JsonToCboList("ChapterTypeName", "ChapterTypeCode", JSON.parse(data.body), { "SelectType": "BLANK" }));
+                                     $('#sel_ChapterType').html(JsonToCboList("ChapterTypeName", "ChapterTypeCode", JSON.parse(data.body), { "SelectType": "ALL" }));
                                  }
                              },
                              "failure": function (data, statusText, jqXHR) {
@@ -214,6 +214,9 @@
                 var disId = $("#sel_Distributor_id").val();
                 var appealResult = $("#sel_status_id").val();
                 var chapterType = $("#sel_ChapterType").val();
+                if (chapterType == "0") {
+                    chapterType = "";
+                }
 
                 //$.sa.get("http://localhost:6505/infi/api/v1/AppealMng/SearchApplealInfoList",
                 $.sa.get(SEARCHAPPLEALINFOLIST,
@@ -689,6 +692,9 @@
             var disId = $("#sel_Distributor_id").val();
             var appealResult = $("#sel_status_id").val();
             var chapterType = $("#sel_ChapterType").val();
+            if (chapterType == "0") {
+                chapterType = "";
+            }
 
             var item = {
                 sdate: sdate,

@@ -93,8 +93,8 @@ namespace INFI.Web.Controllers
             foreach (AppealListDto appealListDto in result.Result)
             {
                 string RId = appealListDto.TPId;
-                string firstDic = appealListDto.DisName.Trim();
-                string secondDic = appealListDto.Title;
+                string firstDic = appealListDto.DisCode.Trim() + "_"+appealListDto.DisName.Trim();
+                string secondDic = appealListDto.ScoreStandard.Trim();
                 var regexSearch = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
                 var reg = new Regex(string.Format("[{0}]", Regex.Escape(regexSearch)));
                 secondDic = reg.Replace(secondDic, "");
