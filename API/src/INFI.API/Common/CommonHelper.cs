@@ -12,6 +12,33 @@ namespace INFI.API.Common
 {
     public class CommonHelper
     {
+
+        public static void log(string message)
+        {
+            string appDomainPath = @"E:\Infi_Prd\prd_mix_infi_web";
+            string fileName = appDomainPath + @"\" + "Log" + @"\" + DateTime.Now.ToString("yyyyMMdd") + @"\" + DateTime.Now.ToString("yyyyMMddHHmmss fff") + ".txt";
+            //File.Create(fileName);
+            if (!Directory.Exists(appDomainPath + @"\" + "Log"))
+            {
+                Directory.CreateDirectory(appDomainPath + @"\" + "Log");
+            }
+            if (!Directory.Exists(appDomainPath + @"\" + "Log" + @"\" + DateTime.Now.ToString("yyyyMMdd")))
+            {
+                Directory.CreateDirectory(appDomainPath + @"\" + "Log" + @"\" + DateTime.Now.ToString("yyyyMMdd"));
+            }
+            using (FileStream fs = new FileStream(fileName, FileMode.OpenOrCreate))
+            {
+                byte[] by = WriteStringToByte(message, fs);
+                fs.Flush();
+            }
+        }
+        public static byte[] WriteStringToByte(string str, FileStream fs)
+        {
+            byte[] info = new UTF8Encoding(true).GetBytes(str);
+            fs.Write(info, 0, info.Length);
+            return info;
+        }
+
         public static string EncodeDto<T>(IEnumerable t)
         {
             string jsonString = string.Empty;

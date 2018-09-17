@@ -624,7 +624,7 @@ namespace INFI.API.Service
             {
                 PictureStandard = PictureStandard.Where(a => a.TIId != null).ToList<ExcelPictureStandard>();
             }
-
+            
             string PlansXML = CommonHelper.Serializer(typeof(List<ExcelPlans>), Plans);
             string TaskOfPlansXML = CommonHelper.Serializer(typeof(List<ExcelTaskOfPlans>), TaskOfPlans);
             string TaskCardXML = CommonHelper.Serializer(typeof(List<ExcelTaskCard>), TaskCard);
@@ -633,6 +633,14 @@ namespace INFI.API.Service
             string ScoreXML = CommonHelper.Serializer(typeof(List<ExcelScore>), Score);
             string CheckResultXML = CommonHelper.Serializer(typeof(List<ExcelCheckResult>), CheckResult);
             string PictureStandardXML = CommonHelper.Serializer(typeof(List<ExcelPictureStandard>), PictureStandard);
+            CommonHelper.log(PlansXML+"\r\n"+
+            TaskOfPlansXML + "\r\n"+
+            TaskCardXML + "\r\n"+
+            TaskItemXML + "\r\n"+
+           CheckStandardXML + "\r\n"+
+            ScoreXML + "\r\n"+
+            CheckResultXML.ToString() + "\r\n"+
+            PictureStandardXML + "\r\n");
             string spName = @"up_RMMT_TAS_CreatePlansByExcel_C";
             DynamicParameters dp = new DynamicParameters();
             dp.Add("@InUserId", InUserId, DbType.Int32);

@@ -81,9 +81,9 @@ namespace INFI.Web.Controllers
         }
 
         public IActionResult DownloadAttachBatch(string sdate, string edate, string sourceType, string carId, string areaId,
-            string zoneId, string disId, string appealResult)
+            string zoneId, string disId, string appealResult, string chapterType)
         {
-            Task<IEnumerable<AppealListDto>> result = SearchApplealInfoList(sdate, edate, sourceType, carId, areaId, zoneId, disId, appealResult);
+            Task<IEnumerable<AppealListDto>> result = SearchApplealInfoList(sdate, edate, sourceType, carId, areaId, zoneId, disId, appealResult, chapterType);
 
             string downloads = Path.Combine(_environment.WebRootPath, "downloads");
             string timestamp = DateTime.Now.ToString("yyyyMMddHHmmssfff");
@@ -118,7 +118,7 @@ namespace INFI.Web.Controllers
             }
             if (!hasAttach)
             {
-                return Json(new { ErrorMsg = "没有报备附件.", Status = false, resultCode = 0 });
+                return Json(new { ErrorMsg = "没有申诉附件.", Status = false, resultCode = 0 });
             }
             //ZIP 
             string zipFile = Path.Combine(downloads, timestamp + ".zip");
@@ -130,7 +130,7 @@ namespace INFI.Web.Controllers
 
 
         private async Task<IEnumerable<AppealListDto>> SearchApplealInfoList(string sdate, string edate, string sourceType, string carId, string areaId,
-            string zoneId, string disId, string appealResult)
+            string zoneId, string disId,string appealResult,string chapterType)
         {
             string url = CommonHelper.Current.GetAPIBaseUrl + "/AppealMng/SearchApplealInfoList?";
             
@@ -141,6 +141,7 @@ namespace INFI.Web.Controllers
             url += "&areaId=" + areaId;
             url += "&zoneId=" + zoneId;
             url += "&disId=" + disId;
+            url += "&chapterType=" + chapterType;
             url += "&appealResult=" + appealResult;
 
             string result = await CommonHelper.GetHttpClient().GetStringAsync(url);

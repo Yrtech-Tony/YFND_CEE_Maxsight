@@ -68,7 +68,7 @@
                 fn_downLoad();
             });
 
-            //add by 霍海涛   批量下载报备附件
+            //add by 霍海涛   批量下载申诉附件
             $("#btnDownLoadAttach").on("click", function () {
                 fn_downloadAttach();
             });
@@ -681,7 +681,7 @@
             cell.style.font.underline = underline;
         }
 
-        // add by 霍海涛   批量下载报备附件
+        // add by 霍海涛   批量下载申诉附件
         function fn_downloadAttach() {
             var sdate = $("#txtSDate").val().replace(/\-/gi, '');
             var edate = $("#txtEDate").val().replace(/\-/gi, '');
@@ -707,10 +707,13 @@
                 appealResult: appealResult,
                 chapterType: chapterType
             };
-            //var spinner = createSpinner();
+           // var spinner = createSpinner();
             //$("#modal-container-loadbar").css("display", "block");
             //spinner.spin(document.getElementById('loadBar'));
             var url = '/AppealMng/DownloadAttachBatch';
+            //for (pro in item) {
+            //    url += pro + "=" + item[pro] + "&"
+            //}
             //$.get(url, item, function (data) {
             //    if (data.status) {
             //        window.location.href = data.zipFile;
