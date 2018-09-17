@@ -92,7 +92,7 @@ namespace INFI.Web.Controllers
             bool hasAttach = false;
             foreach (AppealListDto appealListDto in result.Result)
             {
-                string RId = appealListDto.TPId;
+                string RId = appealListDto.Id;
                 string firstDic = appealListDto.DisCode.Trim() + "_"+appealListDto.DisName.Trim();
                 string secondDic = appealListDto.ScoreStandard.Trim();
                 var regexSearch = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
